@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "딥러닝 메모장 021 ~ 040.md",
+                "file": "딥러닝 메모장 001 ~ 020.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "딥러닝 메모장 021 ~ 040"
+              "title": "딥러닝 메모장 001 ~ 020"
             }
           }
         ]
@@ -78,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "ec4b9718723f4702",
@@ -184,10 +183,19 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "f3708c9f66ed47ce",
+  "active": "71f6ea576ad981d7",
   "lastOpenFiles": [
+    "images/Pasted image 20260607183621.png",
+    "images",
+    "images/Pasted image 20260607183320.png",
+    "images/Pasted image 20260607183229.png",
+    "Pasted image 20260607182218.png",
+    "Pasted image 20260607181835.png",
+    "딥러닝 메모장 041 ~ 060.md",
+    "무제.base",
+    "무제 1.base",
+    "딥러닝 메모장 021 ~ 040.md",
     "딥러닝 메모장 001 ~ 020.md",
-    "환영합니다!.md",
-    "딥러닝 메모장 021 ~ 040.md"
+    "환영합니다!.md"
   ]
 }
