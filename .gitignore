@@ -179,3 +179,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# adding
+**/.DS_Store
+deep-learning-memo/images/
+02_crawling_data/images/
