@@ -8,7 +8,7 @@
         "type": "tabs",
         "children": [
           {
-            "id": "f3708c9f66ed47ce",
+            "id": "bc248028c6d51030",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -93,7 +93,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "ec4b9718723f4702",
@@ -202,6 +203,9 @@
   "lastOpenFiles": [
     "딥러닝 메모장 061 ~ 080.md",
     "딥러닝 메모장 081 ~ 100.md",
+    "딥러닝 메모장 021 ~ 040.md",
+    "딥러닝 메모장 001 ~ 020.md",
+    "딥러닝 메모장 041 ~ 060.md",
     "images/Pasted image 20260618202315.png",
     "images/Pasted image 20260618201908.png",
     "images/Pasted image 20260614221641.png",
@@ -212,9 +216,6 @@
     "images/Pasted image 20260614005441.png",
     "images/Pasted image 20260614005354.png",
     "images/Pasted image 20260613233239.png",
-    "딥러닝 메모장 041 ~ 060.md",
-    "딥러닝 메모장 001 ~ 020.md",
-    "딥러닝 메모장 021 ~ 040.md",
     "무제",
     "환영합니다!.md",
     "Pasted.md",
