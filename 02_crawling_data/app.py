@@ -1,3 +1,7 @@
+import os
+# OpenMP 중복 초기화 에러 우회
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from fastapi import FastAPI, UploadFile, File
 import torch
 import albumentations as A
