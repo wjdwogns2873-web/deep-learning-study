@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "ec4b9718723f4702",
@@ -185,6 +186,8 @@
   },
   "active": "bc248028c6d51030",
   "lastOpenFiles": [
+    "images/Pasted image 20260629223912.png",
+    "images/Pasted image 20260629222342.png",
     "딥러닝 메모장 061 ~ 080.md",
     "images/Pasted image 20260628230731.png",
     "딥러닝 메모장 081 ~ 100.md",
@@ -199,7 +202,6 @@
     "images/Pasted image 20260627004955.png",
     "images/Pasted image 20260618202315.png",
     "images/Pasted image 20260618201908.png",
-    "images/Pasted image 20260614221641.png",
     "무제",
     "환영합니다!.md",
     "Pasted.md",
