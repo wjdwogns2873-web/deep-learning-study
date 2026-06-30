@@ -26,7 +26,7 @@ model.fc = nn.Linear(num_features, 6)
 model = model.to(device)
 
 # model.load_state_dict(torch.load('my_custom_cnn_fruits.pth', map_location=device))
-model.load_state_dict(torch.load('best_model_fold2.pth', map_location=device))
+model.load_state_dict(torch.load('fold1_100.pth', map_location=device))
 model.eval()
 
 transform = A.Compose([
