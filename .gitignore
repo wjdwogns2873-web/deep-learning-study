@@ -182,4 +182,5 @@ cython_debug/
 
 # adding
 **/.DS_Store
-02_crawling_data/images/
+02_image_classification/images/
+03_object_detection/images/

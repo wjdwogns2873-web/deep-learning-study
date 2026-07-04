@@ -35,8 +35,7 @@
               "title": "딥러닝 메모장 101 ~ 120"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -199,13 +198,15 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "ef252883e501e932",
+  "active": "d8a2eab143c82207",
   "lastOpenFiles": [
-    "images/Pasted image 20260703174117.png",
-    "딥러닝 메모장 061 ~ 080.md",
-    "딥러닝 메모장 081 ~ 100.md",
     "딥러닝 메모장 041 ~ 060.md",
+    "딥러닝 메모장 021 ~ 040.md",
+    "딥러닝 메모장 001 ~ 020.md",
+    "딥러닝 메모장 061 ~ 080.md",
     "딥러닝 메모장 101 ~ 120.md",
+    "images/Pasted image 20260703174117.png",
+    "딥러닝 메모장 081 ~ 100.md",
     "images/Pasted image 20260701225207.png",
     "images/Pasted image 20260701224533.png",
     "images/Pasted image 20260630203048.png",
@@ -215,9 +216,6 @@
     "images/Pasted image 20260630163229.png",
     "images/Pasted image 20260630162856.png",
     "images/Pasted image 20260630162838.png",
-    "images/Pasted image 20260628230731.png",
-    "딥러닝 메모장 021 ~ 040.md",
-    "딥러닝 메모장 001 ~ 020.md",
     "무제",
     "환영합니다!.md",
     "Pasted.md",
