@@ -9,7 +9,7 @@ from PIL import Image
 app = FastAPI()
 
 # 학습 완료된 리즈시절 가중치 가져오기
-model = YOLO('runs/trash_v1/weights/best.pt')
+model = YOLO('runs/more_apples/weights/best.pt')
 
 @app.post("/predict")
 async def predict_trash(file: UploadFile):
