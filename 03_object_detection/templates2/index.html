@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<title>사과 신선도 객체 탐지 시스템</title>
+	<style>
+		body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+		# result-image { max-width: 600px; margin-top: 20px; display: none; }
+	</style>
+</head>
+<body>
+	<h1> 사과 객체 탐지 시스템</h1>
+	<p>사과 이미지를 업로드하면 YOLOv8 모델이 실시간으로 탐지합니다.<p>
+	<input type="file" id="image-input" accept="image/*">
+	<button onclick="uploadImage()">탐지 시작</button>
+	<br>
+	<img id="result-image" src="" alt="추론 결과">
+	<script>
+		async function uploadImage() {
+			const input = document.getElementById('image-input');
+			if (!input.files[0]) {
+				alert("이미지를 업로드해 주세요!");
+				return;
+			}
+			
+			const formData = new FormData();
+			formData.append('file', input.files[0]);
+			
+			const response = await fetch('/predict', {
+				method: 'POST', 
+				body: formData
+			});
+			
+			if (response.ok) {
+				// 서버가 바이너리 이미지(Blob)를 주므로, 이를 URL로 변환해 img 태그에 매핑
+				const blob = await response.blob();
+				const imageUrl = URL.createObjectURL(blob);
+				
+				const resultImg = document.getElementById('result-image');
+				resultImg.src = imageUrl;
+				resultImg.style.display = 'inline-block';
+			} else {
+				alert("추론 실패");
+			}
+		}
+	</script>
+</body>
+</html>
