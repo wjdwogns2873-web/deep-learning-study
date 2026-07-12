@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>YOLOv8 Functional Platform</title>
+</head>
+<body>
+    <h2>1. 비디오 파일 선택</h2>
+    <form id="startForm">
+	<input type="file" id="videoFileInput" accept="video/*" required>
+	<br><br>
+	<button type="submit" style="padding: 10px 20px; font-weight: bold;">AI 분석 페이지로 이동</	button>
+    </form>
+    <script>
+	document.getElementById('startForm').addEventListener('submit', async (e) => {
+	    e.preventDefault();
+	    const fileInput = document.getElementById('videoFileInput');
+	    const file = fileInput.files[0];
+
+	    // 세션 식별 아이디를 프론트에서 임시 발급
+	    const sessionId = Date.now().toString();
+	    const formData = new FormData();
+	    formData.append('file', file);
+
+	    // 먼저 서버 메모리에 동영상 바이트 데이터를 탑재시킵니다.
+	    await fetch(`/upload_memory/${sessionId}`, { method: 'POST', body: formData });
+
+	    // 주소창에 세션 ID를 붙여서 결과 페이지로 물리적 화면을 전환합니다.
+	    window.location.href = `/video_feed_page?session_id=${sessionId}`;
+	});
+    </script>
+</body>
+</html>

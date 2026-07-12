@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Control Dashboard</title>
+</head>
+<body>
+    <h2>AI 관제 스트리밍 시스템</h2>
+
+    <div id="statusIndicator" style="font-weight: bold; color: blue; margin-bottom: 10px;">
+	상태: AI 추론 프로세스 가동 중
+    </div>
+
+    <div stype="background-color: black; display: inline-block; padding: 5px;">
+	<img id="streamImage" src="/video_feed/{{session_id}}" alt="AI Stream Feed" style="width: 720px; display: block;">
+    </div>
+
+    <br><br>
+    <button id="stopButton" style="padding: 10px 20px; background-color: red; color: white; border: none; cursor: pointer; font-weight: bold;">
+	즉시 분석 종료 및 엔진 정지
+    </button>
+
+    <button id="backButton" style="padding: 10px 20px; margin-left: 10px; cursor: pointer;">
+	처음 화면으로 돌아가기
+    </button>
+
+
+    <script>
+	const sessionId = "{{session_id}}";
+	const streamImg = document.getElementById('streamImage');
+	const statusDiv = document.getElementById('statusIndicator');
+
+	// 이미지가 다 로드되거나 서버에서 스트림을 끝내서 끊기면 호출되는 이벤트
+	streamImg.onerror = function() {
+	    handleStreamEnd("스트리밍이 정상 종료되었습니다. (연결 끊김)");
+	};
+
+	streamImg.onload = function() {
+	    
+	}
+
+	// 분석 종료 버튼 클릭 이벤트
+	document.getElementById('stopButton').addEventListener('click', async () => {
+	    // 서버에 즉시 정지 명령 요청
+	    const response = await fetch(`/stop_stream/${sessionId}`, { method: 'POST' });
+	    const data = await response.json();
+
+	    if (data.status === "stopped") {
+		handleStreamEnd("사용자에 의해 실시간 추론 반복문이 즉시 중단되었습니다.");
+	    }
+	});
+
+	// 돌아가기 버튼 클릭 이벤트
+	document.getElementById('backButton').addEventListener('click', async() => {
+	    // 혹시 가동 중일 수 있으니 안전하게 정지 한번 때리고 이동
+	    await fetch(`/stop_stream/${sessionId}`, { method: 'POST' });
+	    window.location.href = "/";
+	});
+
+	// 웹 화면에 최종 완료 처리하는 공통 함수
+	function handleStreamEnd(message) {
+	    streamImg.src = ""; // 이미지 주소를 비워 브라우저 커넥션을 명시적으로 끊음
+	    statusDiv.textContent = `결과 알림: ${message}`;
+	    statusDiv.style.color = "red";
+	    document.getElementById('stopButton').disabled = true; // 중복 클릭 방지
+	}
+    </script>
+</body>
+</html>
