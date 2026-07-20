@@ -9,6 +9,7 @@
 	</style>
 </head>
 <body>
+	<div id="result-text" style="margin-top: 20px; font-weight: bold; font-size: 1.2rem; color: #333;"></div>
 	<h1> 사과 객체 탐지 시스템</h1>
 	<p>사과 이미지를 업로드하면 YOLOv8 모델이 실시간으로 탐지합니다.<p>
 	<input type="file" id="image-input" accept="image/*">
@@ -32,6 +33,12 @@
 			});
 			
 			if (response.ok) {
+				// 백엔드가 헤더에 심어준 과일 개수 정보 꺼내기
+				const countsHeader = response.headers.get('x-detected-counts')
+				if (countsHeader) {
+					const counts = JSON.parse(countsHeader)
+					document.getElementById('result-text').innerText = `사과: ${counts.apples}개 | 바나나: ${counts.banana}개 탐지 완료`;
+				}
 				// 서버가 바이너리 이미지(Blob)를 주므로, 이를 URL로 변환해 img 태그에 매핑
 				const blob = await response.blob();
 				const imageUrl = URL.createObjectURL(blob);
