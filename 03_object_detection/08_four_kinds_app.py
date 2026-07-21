@@ -6,6 +6,7 @@ from ultralytics import YOLO
 import uuid
 from datetime import datetime
 import cv2
+from fastapi.responses import Response
 
 # 현재 시간을 '년월일시분초' 형식의 문자열로 추출 (20260720175830)
 current_time_str = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -24,6 +25,32 @@ def read_root():
     return {"message": "Fruit Freshness Detection API is Running"}
 
 @app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    # 업로드된 이미지 파일 읽기
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes))
+    print(f"type of image: {type(image)}") # <class 'PIL.JpegImagePlugin.JpegImageFile'>
+
+    # YOLOv8 추론
+    results = model(image)
+    result = results[0]
+
+    # BBox와 라벨이 그려진 이미지 배열(넘파이) 생성
+    annotated_frame = result.plot()
+    print(f"type of annotated_frame: {type(annotated_frame)}") # <class 'numpy.ndarray'>
+
+    # OpenCV BGR 채널을 RGB로 변환 후 이미지 바이너리로 인코딩
+    annotated_frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+    res_image = Image.fromarray(annotated_frame_rgb)
+    print(f"type of res_image: {type(res_image)}") # <class 'PIL.Image.Image'>
+
+    # 메모리 버퍼에 JPEG 형식으로 저장
+    img_byte_arr = io.BytesIO()
+    res_image.save(img_byte_arr, format="JPEG")
+
+    return Response(content=img_byte_arr.getvalue(), media_type="image/jpeg")
+
+@app.post("/org_predict")
 async def predict_fruit(file: UploadFile = File(...)):
     # 파일 읽기 및 PIL 이미지로 변환
     file_bytes = await file.read()

@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "딥러닝 메모장 121 ~ 140.md",
+                "file": "딥러닝 메모장 081 ~ 100.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "딥러닝 메모장 121 ~ 140"
+              "title": "딥러닝 메모장 081 ~ 100"
+            }
+          },
+          {
+            "id": "98578fc799cdf755",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "딥러닝 메모장 141 ~ 160.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "딥러닝 메모장 141 ~ 160"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -53,7 +68,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "iou",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -74,8 +89,7 @@
               "title": "북마크"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -185,18 +199,20 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "77bcf1a653ac491d",
+  "active": "98578fc799cdf755",
   "lastOpenFiles": [
+    "딥러닝 메모장 121 ~ 140.md",
+    "딥러닝 메모장 101 ~ 120.md",
     "딥러닝 메모장 141 ~ 160.md",
+    "images/Pasted image 20260721142351.png",
+    "images/Pasted image 20260721142249.png",
+    "딥러닝 메모장 081 ~ 100.md",
     "images/Pasted image 20260720173554.png",
     "딥러닝 메모장 001 ~ 020.md",
     "색인.md",
-    "딥러닝 메모장 121 ~ 140.md",
     "딥러닝 메모장 041 ~ 060.md",
-    "딥러닝 메모장 081 ~ 100.md",
     "딥러닝 메모장 061 ~ 080.md",
     "images/Pasted image 20260713141841.png",
-    "딥러닝 메모장 101 ~ 120.md",
     "images/Pasted image 20260712212451.png",
     "images/Pasted image 20260712203211.png",
     "images/Pasted image 20260711121020.png",
@@ -204,8 +220,6 @@
     "04_Apple_classification.ipynb.md",
     "images/Pasted image 20260704221323.png",
     "images/Pasted image 20260704211401.png",
-    "images/Pasted image 20260704185155.png",
-    "images/Pasted image 20260704133843.png",
     "딥러닝 메모장 021 ~ 040.md",
     "무제",
     "환영합니다!.md",
