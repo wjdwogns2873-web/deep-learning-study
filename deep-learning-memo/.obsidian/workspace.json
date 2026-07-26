@@ -22,7 +22,7 @@
             }
           },
           {
-            "id": "7c8d0ae3c4ae8c00",
+            "id": "4ce718c8739455ac",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -68,7 +68,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "dfl",
+                "query": "rsplit",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -94,8 +94,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "right": {
     "id": "ec4b9718723f4702",
@@ -200,20 +199,20 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "7c8d0ae3c4ae8c00",
+  "active": "4ce718c8739455ac",
   "lastOpenFiles": [
+    "딥러닝 메모장 061 ~ 080.md",
+    "딥러닝 메모장 001 ~ 020.md",
+    "딥러닝 메모장 161 ~ 180.md",
     "images/Pasted image 20260724110533.png",
     "images/Pasted image 20260724110447.png",
-    "딥러닝 메모장 061 ~ 080.md",
     "딥러닝 메모장 101 ~ 120.md",
-    "딥러닝 메모장 161 ~ 180.md",
     "딥러닝 메모장 141 ~ 160.md",
     "딥러닝 메모장 121 ~ 140.md",
     "images/Pasted image 20260721142351.png",
     "images/Pasted image 20260721142249.png",
     "딥러닝 메모장 081 ~ 100.md",
     "images/Pasted image 20260720173554.png",
-    "딥러닝 메모장 001 ~ 020.md",
     "색인.md",
     "딥러닝 메모장 041 ~ 060.md",
     "images/Pasted image 20260713141841.png",
@@ -222,7 +221,6 @@
     "images/Pasted image 20260711121020.png",
     "images/Pasted image 20260705204340.png",
     "04_Apple_classification.ipynb.md",
-    "images/Pasted image 20260704221323.png",
     "딥러닝 메모장 021 ~ 040.md",
     "무제",
     "환영합니다!.md",
