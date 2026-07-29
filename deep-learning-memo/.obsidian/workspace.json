@@ -68,7 +68,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "rsplit",
+                "query": "random.s",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -94,7 +94,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "ec4b9718723f4702",
@@ -201,9 +202,13 @@
   },
   "active": "4ce718c8739455ac",
   "lastOpenFiles": [
+    "images/Pasted image 20260729210120.png",
+    "images/Pasted image 20260729210118.png",
+    "images/Pasted image 20260729200123.png",
+    "딥러닝 메모장 161 ~ 180.md",
+    "images/Pasted image 20260729141022.png",
     "딥러닝 메모장 061 ~ 080.md",
     "딥러닝 메모장 001 ~ 020.md",
-    "딥러닝 메모장 161 ~ 180.md",
     "images/Pasted image 20260724110533.png",
     "images/Pasted image 20260724110447.png",
     "딥러닝 메모장 101 ~ 120.md",
@@ -217,9 +222,6 @@
     "딥러닝 메모장 041 ~ 060.md",
     "images/Pasted image 20260713141841.png",
     "images/Pasted image 20260712212451.png",
-    "images/Pasted image 20260712203211.png",
-    "images/Pasted image 20260711121020.png",
-    "images/Pasted image 20260705204340.png",
     "04_Apple_classification.ipynb.md",
     "딥러닝 메모장 021 ~ 040.md",
     "무제",
