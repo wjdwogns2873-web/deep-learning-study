@@ -154,8 +154,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "right": {
     "id": "ec4b9718723f4702",
@@ -171,7 +170,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "wwww.md",
+                "file": "JS 메모장 001 ~ 020.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -181,7 +180,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "wwww 의 백링크"
+              "title": "백링크"
             }
           },
           {
