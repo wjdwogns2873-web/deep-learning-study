@@ -83,8 +83,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "290cf14a4b3b3ae5",
@@ -191,6 +190,7 @@
   },
   "active": "c3581b3b85108145",
   "lastOpenFiles": [
+    "images/Pasted image 20260824202223.png",
     "images/Pasted image 20260824201815.png",
     "Pasted image 20260824201731.png",
     "트러블슈팅 이력.md",
