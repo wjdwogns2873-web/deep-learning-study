@@ -59,6 +59,7 @@
                         <div class="d-flex justify-content-center">
                             <div id="resultContainer" style="text-align: center;">
                                 <p id="clickGuide" class="text-muted fs-7 d-none">👇 이미지를 클릭하면 일시정지 / 다시재생 됩니다.</p>
+                                <p id="fpsCounter" class="text-muted fs-7">FPS: --</p>
                                 <!-- 탐지 결과 스트리밍 이미지 -->
                                 <img id="resultFrame"
                                      style="cursor: pointer; max-width: 100%; border: 2px solid #333; border-radius: 8px; display: none;"
@@ -157,26 +158,12 @@
     const socket = new WebSocket(`ws://${host}:8000/ws/detect`);
     socket.binaryType = 'blob'; // 수신 데이터 타입을 blob으로 지정
 
+    let currentBlobUrl = null;// 메모리 관리를 위한 전역 변수
+
+    const fpsCounter = document.getElementById('fpsCounter');
+    let lastCalledTime = performance.now(); // FPS 계산용 이전 시간 저장
+
     socket.onopen = () => console.log('WebSocket 연결 성공');
-
-    let currentBlobUrl = null;
-
-    socket.onmessage = (event) => {
-        // 이전 생성된 메모리 주소를 해제하여 브라우저 메모리 누수 방지
-        if (currentBlobUrl) {
-            URL.revokeObjectURL(currentBlobUrl);
-        }
-
-        // 서버로부터 받은 바이너리(blob) 데이터를 브라우저용 URL로 변환
-        currentBlobUrl = URL.createObjectURL(event.data);
-        resultFrame.src = currentBlobUrl;
-    }
-
-
-    // FastAPI로부터 추론 프레임 수신 시 화면 갱신
-    // socket.onmessage = (event) => {
-    //     resultFrame.src = event.data;
-    // };
 
     // 비디오 파일 선택 시 원본 연결
     videoInput.addEventListener('change', (e) => {
@@ -198,17 +185,6 @@
 
         // 재생 시작 (play 이벤트가 트리거되면서 웹소켓 전송 시작)
         video.play();
-    });
-
-    // ✨ 결과 이미지 클릭 시 일시정지 / 다시 재생 토글
-    resultFrame.addEventListener('click', () => {
-        if (video.paused) {
-            video.play();
-            console.log('영상 재생');
-        } else {
-            video.pause();
-            console.log('영상 일시정지');
-        }
     });
 
     // 비디오 재생 중 프레임 추출 및 전송 루프
@@ -239,15 +215,33 @@
             currentBlobUrl = URL.createObjectURL(event.data);
             resultFrame.src = currentBlobUrl;
 
+            // 실시간 FPS 계산 로직
+            const delta = (performance.now() - lastCalledTime) / 1000; // 지난 시간을 초 단위로 변환
+            lastCalledTime = performance.now();
+            const currentFps = Math.round(1 / delta); // 1초 나누기 걸린 시간 = FPS
+
+            fpsCounter.innerText = `FPS: ${currentFps}`;
+
             // 락을 해제하고 바로 다음 프레임을 전송 요청
             isProcessing = false;
 
             // 아주 미세한 텀(예: 10ms)을 주거나 즉시 다음 프레임 전송
             setTimeout(sendNextFrame, 10);
         };
-        
+
         // 최초 재생 시작 시 첫 프레임을 트리거
         sendNextFrame();
+    });
+
+    // ✨ 결과 이미지 클릭 시 일시정지 / 다시 재생 토글
+    resultFrame.addEventListener('click', () => {
+        if (video.paused) {
+            video.play();
+            console.log('영상 재생');
+        } else {
+            video.pause();
+            console.log('영상 일시정지');
+        }
     });
 
     // --- 2. 이미지 단건 탐지 ---
@@ -309,6 +303,8 @@
     function updateIoU(val) {
         document.getElementById('iou_value').innerText = Number(val) / 100;
     }
+
+
 </script>
 </body>
 </html>

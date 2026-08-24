@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.fruit.logistics.service.DetectionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.client.RestTemplate;
-import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,5 +58,6 @@ public class DetectionController {
         List<DetectionHistory> histories = detectionService.getAllHistories();
         return ResponseEntity.ok(histories);
     }
+
 
 }

@@ -77,41 +77,6 @@ async def websocket_detect(websocket: WebSocket):
     except WebSocketDisconnect:
         print('WebSocket 연결 종료')
 
-# @app.websocket("/ws/detect")
-# async def websocket_detect(websocket: WebSocket):
-#     await websocket.accept()
-#     try:
-#         while True:
-#             # 1. 프론트엔드로부터 base64 이미지 스트링 수신
-#             data = await websocket.receive_text()
-            
-#             # 헤더 제거 ("data:image/jpeg;base64," 연쇄 분리)
-#             if "," in data:
-#                 data = data.split(",")[1]
-                
-#             # Base64 -> OpenCV Image 디코딩
-#             img_bytes = base64.b64decode(data)
-#             np_arr = np.frombuffer(img_bytes, np.uint8)
-#             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
-#             if frame is None:
-#                 continue
-
-#             # 2. YOLO 추론 (해상도 리사이징으로 처리 속도 극대화)
-#             resized_frame = cv2.resize(frame, (640, 360))
-#             results = model(resized_frame, verbose=False)
-#             annotated_frame = results[0].plot()
-
-#             # 3. 인코딩 및 Base64 변환
-#             _, buffer = cv2.imencode('.jpg', annotated_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
-#             encoded_img = base64.b64encode(buffer).decode('utf-8')
-
-#             # 4. 프론트로 즉시 반환
-#             await websocket.send_text(f"data:image/jpeg;base64,{encoded_img}")
-
-#     except WebSocketDisconnect:
-#         print("WebSocket 연결 종료")
-
 @app.get('/')
 def read_root():
     return {'status': 'AI Server is running'}
@@ -188,6 +153,43 @@ async def predict(
         'predictions': detected_objects, 
         'result_image_base64': base64_image
     }
+
+
+# @app.websocket("/ws/detect")
+# async def websocket_detect(websocket: WebSocket):
+#     await websocket.accept()
+#     try:
+#         while True:
+#             # 1. 프론트엔드로부터 base64 이미지 스트링 수신
+#             data = await websocket.receive_text()
+            
+#             # 헤더 제거 ("data:image/jpeg;base64," 연쇄 분리)
+#             if "," in data:
+#                 data = data.split(",")[1]
+                
+#             # Base64 -> OpenCV Image 디코딩
+#             img_bytes = base64.b64decode(data)
+#             np_arr = np.frombuffer(img_bytes, np.uint8)
+#             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+#             if frame is None:
+#                 continue
+
+#             # 2. YOLO 추론 (해상도 리사이징으로 처리 속도 극대화)
+#             resized_frame = cv2.resize(frame, (640, 360))
+#             results = model(resized_frame, verbose=False)
+#             annotated_frame = results[0].plot()
+
+#             # 3. 인코딩 및 Base64 변환
+#             _, buffer = cv2.imencode('.jpg', annotated_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+#             encoded_img = base64.b64encode(buffer).decode('utf-8')
+
+#             # 4. 프론트로 즉시 반환
+#             await websocket.send_text(f"data:image/jpeg;base64,{encoded_img}")
+
+#     except WebSocketDisconnect:
+#         print("WebSocket 연결 종료")
+
 
 # @app.post('/upload_video')
 # async def upload_video(file: UploadFile = File(...)):
@@ -333,63 +335,3 @@ async def predict(
 #         os.remove(tmp_path) # 처리 완료 후 삭제
 
 #     return StreamingResponse(generate_frames(), media_type='text/event-stream')
-            
-app = FastAPI(title="Fruit Object Detection AI Server")
-model = YOLO("best.pt")
-
-# 임시 저장된 비디오 파일 경로를 저장할 변수
-current_video_path = None
-
-@app.post("/upload_video")
-async def upload_video(file: UploadFile = File(...)):
-    global current_video_path
-    
-    # 기존 임시 파일 삭제
-    if current_video_path and os.path.exists(current_video_path):
-        os.remove(current_video_path)
-
-    # 업로드된 영상 파일을 임시 폴더에 저장
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    contents = await file.read()
-    temp_file.write(contents)
-    temp_file.close()
-
-    current_video_path = temp_file.name
-    return {"status": "SUCCESS", "message": "Video uploaded successfully"}
-
-# 동영상 프레임 생성기
-def generate_video_frames(video_path):
-    cap = cv2.VideoCapture(video_path)
-
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
-            # 동영상이 끝나면 처음부터 무한 반복(Loop) 재생하고 싶을 경우:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            continue
-
-        # 1. YOLOv8 객체 탐지
-        results = model(frame)
-
-        # 2. Bounding Box 그리기
-        annotated_frame = results[0].plot()
-
-        # 3. JPEG 변환 및 MJPEG 스트림 전송
-        ret, buffer = cv2.imencode('.jpg', annotated_frame)
-        frame_bytes = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-
-    cap.release()
-
-@app.get("/video_feed")
-async def video_feed():
-    global current_video_path
-    if not current_video_path or not os.path.exists(current_video_path):
-        raise HTTPException(status_code=400, detail="No video uploaded")
-
-    return StreamingResponse(
-        generate_video_frames(current_video_path), 
-        media_type="multipart/x-mixed-replace; boundary=frame"
-    )

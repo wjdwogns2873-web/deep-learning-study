@@ -13,9 +13,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,7 +33,6 @@ public class DetectionService {
     @Value("${ai.server.url}") // http://localhost:8000
     private String aiServerUrl;
     private final DetectionHistoryRepository historyRepository; // Repository 주입
-
     private final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
 
     // 수신받은 이미지를 파이썬 AI 서버로 전송하고 결과를 받아오는 메서드

@@ -187,17 +187,6 @@
         video.play();
     });
 
-    // ✨ 결과 이미지 클릭 시 일시정지 / 다시 재생 토글
-    resultFrame.addEventListener('click', () => {
-        if (video.paused) {
-            video.play();
-            console.log('영상 재생');
-        } else {
-            video.pause();
-            console.log('영상 일시정지');
-        }
-    });
-
     // 비디오 재생 중 프레임 추출 및 전송 루프
     video.addEventListener('play', () => {
         // 현재 프레임 처리가 완료되었는지 확인하는 플래그
@@ -242,6 +231,17 @@
 
         // 최초 재생 시작 시 첫 프레임을 트리거
         sendNextFrame();
+    });
+
+    // ✨ 결과 이미지 클릭 시 일시정지 / 다시 재생 토글
+    resultFrame.addEventListener('click', () => {
+        if (video.paused) {
+            video.play();
+            console.log('영상 재생');
+        } else {
+            video.pause();
+            console.log('영상 일시정지');
+        }
     });
 
     // --- 2. 이미지 단건 탐지 ---
@@ -303,6 +303,8 @@
     function updateIoU(val) {
         document.getElementById('iou_value').innerText = Number(val) / 100;
     }
+
+
 </script>
 </body>
 </html>
