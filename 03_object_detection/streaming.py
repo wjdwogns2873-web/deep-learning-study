@@ -158,14 +158,6 @@ async def video_feed(session_id: str, request: Request):
     )
 
 
-@app.get("/video_feed/{session_id")
-async def video_feed(sessin_id: str, request: Request):
-    return StreamingResponse(
-        generate_frames(request.app.state.last_bytes if hasattr(request.app.state, 'last_bytes') else b'', session_id), 
-        media_type="multipart/x-mixed-relpace; boundary=frame"
-    )
-    
-
 
 # 스트리밍 영상 전용 엔드포인트
 # @app.get("/video_feed/{video_id}")

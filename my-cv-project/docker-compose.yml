@@ -1,0 +1,44 @@
+
+services:
+  # 1. AI 서버 (FastAPI)
+  fastapi-service:
+    build:
+      context: ./fastapi-app
+      dockerfile: Dockerfile
+    container_name: fastapi-container
+    ports:
+      - "8000:8000"
+    # 로컬 폴더를 도커 내부에 실시간 연결 + uvicorn --reload 옵션
+    volumes:
+    - ./fastapi-app:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: always
+
+  # 2. 백엔드 서버 (Spring Boot)
+  spring-service:
+    build:
+      context: ./spring-app
+      dockerfile: Dockerfile
+    container_name: spring-container
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./build/classes/java/main:/app/classes # 컴파일된 클래스 바인딩
+    environment:
+      # 💡 중요: 도커 내부끼리는 localhost 대신 서비스 이름(fastapi-service)으로 통신합니다!
+      - PYTHON_AI_URL=http://fastapi-service:8000
+    depends_on:
+      - fastapi-service
+    restart: always
+
+  # 🔥 DuckDNS 자동 IP 갱신 컨테이너 추가
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Seoul
+      - SUBDOMAINS=jaehun-cv  # (예: jaehun-cv)
+      - TOKEN=55feaa15-d316-45cb-9a9c-791e391e0a76      # (예: a1b2c3d4-xxxx-xxxx)
+    restart: unless-stopped
