@@ -4,7 +4,7 @@
 포트폴리오: http://jaehun-cv.duckdns.org/
 
 Elevator
-<img width="432" height="960" alt="Image" src="https://github.com/user-attachments/assets/f40ae411-f6d5-4a2b-84bc-71f1a9a27312" />
+<img width="550" height="250" alt="Image" src="https://github.com/user-attachments/assets/868a39af-db60-4e90-b4c4-f8c57fe628e1" />
 
 Red ball out
 <img width="432" height="960" alt="Image" src="https://github.com/user-attachments/assets/d1f1d844-082e-418e-83ce-a024473b28e3" />
