@@ -1,5 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, WebSocket, WebSocketDisconnect, File
+from fastapi.responses import StreamingResponse, Response
 from ultralytics import YOLO
 from PIL import Image
 import io
@@ -12,6 +12,8 @@ import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 import torch
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import quote
+import json
 
 # CPU 집중 작업 및 AI 추론을 처리할 스레드 풀 생성
 executor = ThreadPoolExecutor(max_workers=4)
@@ -96,7 +98,13 @@ async def predict(
     # 수신한 이미지 데이터 읽기
     image_bytes = await file.read()
     # print(f'[predict] type(image_bytes): {type(image_bytes)}') # <class 'bytes'>
-    image = Image.open(io.BytesIO(image_bytes))
+
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    
+    # image = Image.open(io.BytesIO(image_bytes))
+    
     # print(f'[predict] type(image): {type(image)}') # <class 'PIL.PngImagePlugin.PngImageFile'>
     # print(f'[predict] type(io.BytesIO(image_bytes)): {type(io.BytesIO(image_bytes))}') # <class '_io.BytesIO'>
 
@@ -142,17 +150,34 @@ async def predict(
     # print(f'[predict] buffer.shape: {buffer.shape}') # (333519,)
 
     # 이미지를 base64 이미지로 변환하여 자바 서버로 전달
-    base64_image = base64.b64encode(buffer).decode('utf-8')
+    # base64_image = base64.b64encode(buffer).decode('utf-8')
     # print(f'[predict] type(base64_image): {type(base64_image)}') # <class 'str'>
+
+    meta_data = {
+        'status': 'SUCCESS', 
+        'total_count': len(detected_objects), 
+        'predictions': detected_objects
+    }
+
+    # ASCII 바깥 문자(한글 등) 깨짐 방지를 위해 quote 처리
+    json_str = quote(json.dumps(meta_data, ensure_ascii=False))
+
+    return Response(
+        content=buffer.tobytes(), 
+        media_type='image/jpeg', 
+        headers={
+            'X-Detection-Meta': json_str
+        }
+    )
     
 
     # 자바 백엔드로 보낼 JSON 응답 생성
-    return {
-        'status': 'SUCCESS', 
-        'total_count': len(detected_objects), 
-        'predictions': detected_objects, 
-        'result_image_base64': base64_image
-    }
+    # return {
+    #     'status': 'SUCCESS', 
+    #     'total_count': len(detected_objects), 
+    #     'predictions': detected_objects, 
+        # 'result_image_base64': base64_image
+    # }
 
 
 # @app.websocket("/ws/detect")

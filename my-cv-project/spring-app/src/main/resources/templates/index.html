@@ -262,13 +262,22 @@
 
         try {
             const response = await fetch('/api/v1/detection/detect', { method: 'POST', body: formData });
-            const data = await response.json();
-            if (data.status === 'SUCCESS') {
+
+            if (response.ok) {
+                // base64 대신 blob(바이너리)으로 받음
+                const imageBlob = await response.blob()
+                const imageUrl = URL.createObjectURL(imageBlob);
+
                 const img = document.getElementById('resultImage');
-                img.src = 'data:image/jpeg;base64,' + data.result_image_base64;
+                img.src = imageUrl;
                 img.classList.remove('d-none');
+            } else {
+                alert('탐지 실패');
             }
-        } catch (e) { alert('오류 발생'); }
+        } catch (e) {
+            console.error(e);
+            alert('오류 발생');
+        }
     });
 
     // --- 3. DB 이력 조회 ---

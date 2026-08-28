@@ -13,10 +13,14 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +40,15 @@ public class DetectionService {
     private final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
 
     // 수신받은 이미지를 파이썬 AI 서버로 전송하고 결과를 받아오는 메서드
-    public Map<String, Object> requestObjectDetection(MultipartFile file,
+    public byte[] requestObjectDetection(MultipartFile file,
                                                       double conf_value,
                                                       double iou_value) {
+        // 파일 무결성 및 유효성 체크
+        if (file == null || file.isEmpty()) {
+            log.warn("업로드된 이미지 파일이 존재하지 않거나 빈 파일입니다.");
+            throw new IllegalArgumentException("이미지 파일을 선택해 주세요.");
+        }
+
         RestTemplate restTemplate = new RestTemplate();
 
         String suffix_url = "/predict/image";
@@ -68,39 +78,64 @@ public class DetectionService {
             log.info("파이썬 AI 서버({})로 이미지 전송 요청 중..", full_url);
 
             // 파이썬 서버로 POST 요청 전송 (현재는 파이썬 서버가 안 켜져 있으므로 예외처리 준비)
-            ResponseEntity<Map> response = restTemplate.postForEntity(full_url, requestEntity, Map.class);
-            Map<String, Object> responseBody = response.getBody();
+            ResponseEntity<byte[]> response = restTemplate.postForEntity(full_url, requestEntity, byte[].class);
+            byte[] imageBytes = response.getBody();
 
-            // DB에 탐지 결과 저장 로직 추가
-            if (responseBody != null && "SUCCESS".equals(responseBody.get("status"))) {
-                // 파이썬에서 받은 Base64 결과 이미지 바이트로 디코딩
-                String base64Image = (String) responseBody.get("result_image_base64");
-                String savedFileName = saveBase64Image(base64Image);// 파일 저장 후 저장된 파일명 리턴
+            // Header에서 메타데이터(X-Detection-Meta) 추출 및 URL Decode
+            String rawMetaHeader = response.getHeaders().getFirst("X-Detection-Meta");
 
-                List<Map<String, Object>> predictions = (List<Map<String, Object>>) responseBody.get("predictions");
+            log.info("rawMetaHeader: " + rawMetaHeader);
 
-                for (Map<String, Object> pred : predictions) {
-                    String label = (String) pred.get("label");
-                    Double confidence = Double.valueOf(pred.get("confidence").toString());
-                    String boxStr = pred.get("box").toString();
+//            Map<String, Object> responseMap = new HashMap<>();
 
-                    DetectionHistory history = DetectionHistory.builder()
-                            .originalFileName(file.getOriginalFilename())
-                            .savedFileName(savedFileName)
-                            .detectedFruit(label)
-                            .confidence(confidence)
-                            .bboxCoordinates(boxStr)
-                            .conf_threshold(conf_value)
-                            .iou_threshold(iou_value)
-                            .build();
+            if (rawMetaHeader != null && imageBytes != null) {
+                String jsonMeta = URLDecoder.decode(rawMetaHeader, StandardCharsets.UTF_8);
 
-                    historyRepository.save(history); // DB Insert
-                    log.info("DB 저장 완료: 과일: {}, 신뢰도: {}", label, confidence);
+                log.info("jsonMeta: " + jsonMeta);
+
+                // Jackson ObjectMapper를 이용해 JSON 문자열을 Map으로 파싱
+                ObjectMapper objectMapper = new ObjectMapper();
+                Map<String, Object> metaData = objectMapper.readValue(jsonMeta, new TypeReference<Map<String, Object>>() {});
+
+                log.info("metaData: " + metaData);
+
+                if ("SUCCESS".equals(metaData.get("status"))) {
+                    // Base64 디코딩 없이 바이너리(byte[]) 그대로 저장
+                    String savedFileName = saveImageBytes(imageBytes);
+
+                    List<Map<String, Object>> predictions = (List<Map<String, Object>>) metaData.get("predictions");
+
+                    if (predictions != null) {
+                        for (Map<String, Object> pred : predictions) {
+                            String label = (String) pred.get("label");
+                            Double confidence = Double.valueOf(pred.get("confidence").toString());
+                            String boxStr = pred.get("box").toString();
+
+                            DetectionHistory history = DetectionHistory.builder()
+                                    .originalFileName(file.getOriginalFilename())
+                                    .savedFileName(savedFileName)
+                                    .detectedFruit(label)
+                                    .confidence(confidence)
+                                    .bboxCoordinates(boxStr)
+                                    .conf_threshold(conf_value)
+                                    .iou_threshold(iou_value)
+                                    .build();
+
+                            historyRepository.save(history); // DB Insert
+                            log.info("DB 저장 완료");
+                        }
+                    }
+
+                    // 프론트엔드로 반환할 결과 구성
+//                    responseMap.put("status", "SUCCESS");
+//                    responseMap.put("savedFileName", savedFileName);
+//                    responseMap.put("total_count", metaData.get("total_count"));
+//                    responseMap.put("predictions", predictions);
                 }
             }
 
-            log.info("파이썬 AI 서버 응답 수신 완료");
-            return responseBody;
+            log.info("파이썬 AI 서버 응답 수신 및 저장 완료");
+            return imageBytes;
 
         } catch (IOException e) {
             log.error("파일 변환 중 오류 발생: {}", e.getMessage());
@@ -112,14 +147,13 @@ public class DetectionService {
     }
 
     // Base64 문자열을 실제 .jpg 파일로 uploads 폴더에 저장하는 유틸 메서드
-    private String saveBase64Image(String base64Image) {
+    private String saveImageBytes(byte[] imageBytes) {
         try {
             File dir = new File(UPLOAD_DIR);
             if (!dir.exists()) {
                 dir.mkdirs();
             }
 
-            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
             String savedFileName = "detected_" + UUID.randomUUID().toString().substring(0, 8) + ".jpg";
             File targetFile = new File(UPLOAD_DIR + savedFileName);
 
