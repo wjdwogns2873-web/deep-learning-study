@@ -64,4 +64,5 @@
   </tr>
 </table>
 
-<a href="https://github.com/wjdwogns2873-web/deep-learning-study/tree/main/game_idea_note" target="_blank">게임 아이디어 노트</a>
+[게임 아이디어 노트](https://github.com/wjdwogns2873-web/deep-learning-study/tree/main/game_idea_note)
+
