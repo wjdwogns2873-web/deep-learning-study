@@ -1,9 +1,15 @@
-# 🚀 M4 맥미니와 함께하는 컴퓨터비전 엔지니어 도전기
-> 올해(2026년) 안에 컴퓨터비전 엔지니어로 취업하는 것을 목표로 공부하는 저장소입니다.
+# 컴퓨터 비전 엔지니어 정재훈의 기술 저장소
+
+2년 6개월간의 자바 백엔드 개발 경험과 유니티(C#) 경험을 결합하여, **합성 데이터(Synthetic Data) 생성부터 실시간 AI 추론 파이프라인 최적화**까지 구축하는 컴퓨터 비전 엔지니어입니다.
 
 🌐 **포트폴리오 Web**: http://jaehun-cv.duckdns.org/
 
 ---
+
+### 핵심 역량
+* **3D 합성 데이터(Synthetic Data) 생성**: Unity(C#) 기반 3D 합성 데이터 및 바운딩 박스 좌표 투영 연산 구축
+* **AI 모델 배포 및 추론 최적화**: PyTorch, ONNX Runtime, TensorRT 추론 엔진 비교 및 FP16 양자화 최적화
+* **고성능 비동기 파이프라인 설계**: OpenCV + FastAPI WebSocket 기반 바이너리 프로토콜 및 Queue (producer-consumer) 비동기 파이프라인 설계
 
 ### 🎮 Elevator (3D Action)
 
