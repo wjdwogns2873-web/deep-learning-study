@@ -1,7 +1,15 @@
+# [필수] FastAPI & 서버 라이브러리
 fastapi
 uvicorn
-ultralytics
-opencv-python-headless
 python-multipart
-Pillow
 websockets
+
+# [필수] 이미지 처리 & ONNX 추론 엔진
+onnxruntime
+opencv-python-headless
+
+# [선택] PyTorch (.pt) 모델 직접 추론 시에만 필요
+ultralytics
+
+# [불필요] opencv-python-headless 및 FastAPI 내부 내장으로 대체 완료
+# Pillow

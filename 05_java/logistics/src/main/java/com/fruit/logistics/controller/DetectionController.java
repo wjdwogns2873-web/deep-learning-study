@@ -33,24 +33,20 @@ public class DetectionController {
 
     // 과일 이미지 파일을 받아 객체 탐지(ai 모델 연동)를 요청하는 엔드포인트
     @PostMapping(value = "/detect")
-    public ResponseEntity<byte[]> detectObject(@RequestParam("file") MultipartFile file,
-                                                            @RequestParam("conf_value") double conf_value,
-                                                            @RequestParam("iou_value") double iou_value){
-        log.info("[이미지 수신 완료] 파일명: {}", file != null ? file.getOriginalFilename() : "없음");
+    public ResponseEntity<byte[]> detectObject(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("conf_value") double conf_value,
+            @RequestParam("iou_value") double iou_value,
+            @RequestParam("model_type") String model_type) {
 
-        byte[] imageBytes = detectionService.requestObjectDetection(file, conf_value, iou_value);
+        log.info("[이미지 수신 완료] 파일명: {}, Engine: {}, Conf: {}, IoU: {}",
+                file != null ? file.getOriginalFilename() : "없음", model_type, conf_value, iou_value);
 
-//        return ResponseEntity.ok(detectionResult);
+        byte[] imageBytes = detectionService.requestObjectDetection(file, conf_value, iou_value, model_type);
+
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG)
                 .body(imageBytes);
-    }
-
-    // 탐지 이력 조회
-    @GetMapping("/histories")
-    public ResponseEntity<List<DetectionHistory>> getHistory() {
-        List<DetectionHistory> histories = detectionService.getAllHistories();
-        return ResponseEntity.ok(histories);
     }
 
 

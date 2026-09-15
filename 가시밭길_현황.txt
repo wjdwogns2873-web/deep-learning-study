@@ -110,3 +110,72 @@ json 파일을 다뤄봤다. 처음이라 초반엔 어떻게 해야할지 감�
 다만 세그멘테이션은 맞혀야 할 텐서가 이미지 텐서일 뿐이다. 그래서, (8, 7, 384, 384)로 shape이 복잡해지는 걸 보았다.
 3차원만 되어도 머리가 아파지는데, 4차원이니까 완전 게임 오버 된거 같았다.
 하지만 제미나이한테 물어보고, 구글링 하다 보니 완전히 100%는 아니더라도 80%까지 이해하는 수준까지 다다랐다.
+
+26.09.02.
+ONNX Runtime에 대해 공부를 했다.
+기존 PyTorch 모델에 비해 ONNX 변환 후에 latency를 비교했는데, ONNX가 압도적으로 빨랐다.
+
+ONNX with MPS
+session = ort.InferenceSession(onnx_path, providers=['CoreMLExecutionProvider'])
+
+ONNX Runtime 추론 소요 시간: 10.20 ms
+
+ONNX Runtime 추론 소요 시간: 11.52 ms
+
+ONNX Runtime 추론 소요 시간: 7.29 ms
+
+ONNX Runtime 추론 소요 시간: 6.26 ms
+
+ONNX Runtime 추론 소요 시간: 6.66 ms
+
+
+ONNX with CPU
+session = ort.InferenceSession(onnx_path, providers=['CPUExecutionProvider'])
+
+ONNX Runtime 추론 소요 시간: 30.94 ms
+
+ONNX Runtime 추론 소요 시간: 19.67 ms
+
+ONNX Runtime 추론 소요 시간: 17.48 ms
+
+ONNX Runtime 추론 소요 시간: 16.11 ms
+
+ONNX Runtime 추론 소요 시간: 16.26 ms
+
+
+PyTorch with MPS
+device = 'mps' if torch.backends.mps.is_available() else 'cpu'
+print(device) # mps
+
+model = YOLO(pt_path).to(device)
+
+전처리 시간: 2.01 ms | 순수 추론 시간: 9.29 ms | 후처리 시간: 5.15 ms => 총 소요 시간: 16.45 ms
+
+전처리 시간: 2.46 ms | 순수 추론 시간: 10.73 ms | 후처리 시간: 2.89 ms => 총 소요 시간: 16.07 ms
+
+전처리 시간: 1.72 ms | 순수 추론 시간: 6.70 ms | 후처리 시간: 3.42 ms => 총 소요 시간: 11.84 ms
+
+전처리 시간: 1.43 ms | 순수 추론 시간: 6.35 ms | 후처리 시간: 3.37 ms => 총 소요 시간: 11.15 ms
+
+전처리 시간: 1.73 ms | 순수 추론 시간: 6.19 ms | 후처리 시간: 4.28 ms => 총 소요 시간: 12.20 ms
+
+
+PyTorch with CPU
+device = 'cpu'
+print(device) # cpu
+
+model = YOLO(pt_path).to(device)
+
+전처리 시간: 0.96 ms | 순수 추론 시간: 23.23 ms | 후처리 시간: 0.41 ms => 총 소요 시간: 24.60 ms
+
+전처리 시간: 0.73 ms | 순수 추론 시간: 22.56 ms | 후처리 시간: 0.24 ms => 총 소요 시간: 23.53 ms
+
+전처리 시간: 0.75 ms | 순수 추론 시간: 23.40 ms | 후처리 시간: 0.24 ms => 총 소요 시간: 24.39 ms
+
+전처리 시간: 0.70 ms | 순수 추론 시간: 23.19 ms | 후처리 시간: 0.25 ms => 총 소요 시간: 24.14 ms
+
+전처리 시간: 0.76 ms | 순수 추론 시간: 23.67 ms | 후처리 시간: 0.40 ms => 총 소요 시간: 24.83 ms
+
+26.09.05.
+3D 모델 이미지를 구해서 좌표와 회전율을 랜덤으로 하여서 1500장의 데이터를 만들었다.
+현업에서는 데이터 부족 문제를 겪고 있다고 하니.. 유니티를 사용하면 데이터 부족이나 불균형 문제 해결에 도움이 될거 같다.

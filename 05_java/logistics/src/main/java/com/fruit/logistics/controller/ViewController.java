@@ -15,7 +15,7 @@ public class ViewController {
     @GetMapping("/")
     public String index(Model model) {
         // DB에 저장된 탐지 이력 목록을 Model에 담아 HTML로 전달
-        model.addAttribute("histories", detectionService.getAllHistories());
+//        model.addAttribute("histories", detectionService.getAllHistories());
         return "index"; // templates/index.html 파일 호출
     }
 }
