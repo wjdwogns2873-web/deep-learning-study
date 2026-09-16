@@ -64,7 +64,7 @@
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -98,7 +98,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "8400",
+                "query": "float*",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -233,25 +233,26 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "c50749b6d9ef423a",
+  "active": "c6e2b8fbad95f94c",
   "lastOpenFiles": [
+    "images/Pasted image 20260916175243.png",
+    "images/Pasted image 20260916164300.png",
+    "images/Pasted image 20260916152307.png",
+    "images/Pasted image 20260916152018.png",
+    "images/Pasted image 20260916150847.png",
+    "images/Pasted image 20260916150616.png",
+    "images/Pasted image 20260916004432.png",
+    "images/Pasted image 20260915221153.png",
+    "C++ 001 ~ 020.md",
     "C++ 021 ~ 040.md",
+    "images/Pasted image 20260915204721.png",
     "images/Pasted image 20260914183750.png",
     "images/Pasted image 20260914161504.png",
-    "C++ 001 ~ 020.md",
-    "images/Pasted image 20260914135429.png",
-    "images/Pasted image 20260914123152.png",
     "딥러닝 메모장 261 ~ 280.md",
     "딥러닝 메모장 241 ~ 260.md",
     "Unity C# 001 ~ 020.md",
-    "images/Pasted image 20260910213435.png",
-    "images/Pasted image 20260910191131.png",
-    "images/Pasted image 20260909215855.png",
     "딥러닝 메모장 181 ~ 200.md",
     "JS 메모장 001 ~ 020.md",
-    "images/Pasted image 20260906141613.png",
-    "images/Pasted image 20260905220251.png",
-    "images/Pasted image 20260905203419.png",
     "딥러닝 메모장 221 ~ 240.md",
     "그냥.. 연습.md",
     "자바 메모장 001 ~ 020.md",
