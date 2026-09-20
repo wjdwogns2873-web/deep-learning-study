@@ -446,8 +446,8 @@ cv::Rect_<float> YoloInferencer::scale_boxes(const cv::Size& img1_shape,
     if (ratio_pad.first < 0.0f) {
         gain = std::min(static_cast<float>(img1_shape.height) / static_cast<float>(img0_shape.height),
             static_cast<float>(img1_shape.width) / static_cast<float>(img0_shape.width));
-        pad_x = roundf((img1_shape.width - img0_shape.width * gain) / 2.0f - 0.1f);
-        pad_y = roundf((img1_shape.height - img0_shape.height * gain) / 2.0f - 0.1f);
+        pad_x = roundf((img1_shape.width - img0_shape.width * gain) / 2.0f - 0.1f); // 0
+        pad_y = roundf((img1_shape.height - img0_shape.height * gain) / 2.0f - 0.1f); // 160
     }
     else {
         gain = ratio_pad.first;

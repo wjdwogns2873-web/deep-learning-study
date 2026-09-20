@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(yolo_ort4)
+project(yolo_ort5)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,12 +22,12 @@ endif()
 include_directories("include/")
 include_directories("${ONNXRUNTIME_DIR}/include")
 
-add_executable(yolo_ort4
+add_executable(yolo_ort5
                main.cpp
                inference.cpp
                inference.h)
 
-target_link_libraries(yolo_ort4
+target_link_libraries(yolo_ort5
     ${OpenCV_LIBS} 
     "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib"
 )

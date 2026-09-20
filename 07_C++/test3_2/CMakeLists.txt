@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-project(yolo_ort4)
+project(yolo_ort3)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Apple Silicon(M1/M2/M3/M4) Homebrew 경로 설정
@@ -22,12 +22,12 @@ endif()
 include_directories("include/")
 include_directories("${ONNXRUNTIME_DIR}/include")
 
-add_executable(yolo_ort4
+add_executable(yolo_ort3
                main.cpp
-               inference.cpp
-               inference.h)
+               engine.cpp
+               engine.hpp)
 
-target_link_libraries(yolo_ort4
+target_link_libraries(yolo_ort3
     ${OpenCV_LIBS} 
     "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib"
 )

@@ -2,41 +2,31 @@
 
 #define RET_OK nullptr
 
-#ifdef _WIN32
-#include <Windows.h>
-#include <direct.h>
-#include <io.h>
-#endif
-
 #include <string>
 #include <vector>
 #include <cstdio>
 #include <opencv2/opencv.hpp>
-#include "onnxruntime_cxx_api.h"
-
-#ifdef USE_CUDA
-#include <cuda_fp16.h>
-#endif
+#include <onnxruntime_cxx_api.h>
 
 enum MODEL_TYPE
 {
-    //FLOAT32 MODEL
-    YOLO_DETECT_V8 = 1,
-    YOLO_POSE = 2,
-    YOLO_CLS = 3,
+    // float 32 model
+    YOLO_DETECT = 1, 
+    YOLO_POSE = 2, 
+    YOLO_CLS = 3, 
 
-    //FLOAT16 MODEL
-    YOLO_DETECT_V8_HALF = 4,
-    YOLO_POSE_V8_HALF = 5,
+    // float 16 model
+    YOLO_DETECT_HALF = 4, 
+    YOLO_POSE_HALF = 5, 
     YOLO_CLS_HALF = 6
 };
 
 typedef struct _DL_INIT_PARAM
 {
     std::string modelPath;
-    MODEL_TYPE modelType = YOLO_DETECT_V8;
+    MODEL_TYPE modelType = YOLO_DETECT;
     std::vector<int> imgSize = { 640, 640 };
-    float rectConfidenceThreshold = 0.6f;
+    float confThreshold = 0.6f;
     float iouThreshold = 0.5f;
     int keyPointsNum = 2;
     bool cudaEnable = false;
@@ -58,14 +48,16 @@ public:
     YOLO_V8();
     ~YOLO_V8();
 
-public:
     const char* CreateSession(DL_INIT_PARAM& iParams);
-    const char* RunSession(cv::Mat& iImg, std::vector<DL_RESULT>& oResult);
     const char* WarmUpSession();
+    const char* RunSession(cv::Mat& iImg, std::vector<DL_RESULT>& oResult);
 
     template<typename N>
-    const char* TensorProcess(clock_t& starttime_1, cv::Mat& iImg, N& blob, std::vector<int64_t>& inputNodeDims,
-        std::vector<DL_RESULT>& oResult);
+    const char* TensorProcess(clock_t starttime_1, 
+                              cv::Mat& iImg, 
+                              N& blob, 
+                              std::vector<int64_t>& inputNodeDims, 
+                              std::vector<DL_RESULT>& oResult);
 
     const char* PreProcess(cv::Mat& iImg, std::vector<int> iImgSize, cv::Mat& oImg);
 
@@ -73,15 +65,18 @@ public:
 
 private:
     Ort::Env env;
-    Ort::Session* session = nullptr;
-    bool cudaEnable = false;
+    Ort::Session* session{ nullptr };
+    bool cudaEnable{ false };
     Ort::RunOptions options;
-    std::vector<const char*> inputNodeNames;
-    std::vector<const char*> outputNodeNames;
+    
+    std::vector<std::string> inputNodeNames;
+    std::vector<std::string> outputNodeNames;
+    std::vector<const char*> inputNodeNamesCStr;
+    std::vector<const char*> outputNodeNamesCStr;
 
     MODEL_TYPE modelType;
     std::vector<int> imgSize;
-    float rectConfidenceThreshold;
+    float confThreshold;
     float iouThreshold;
     float resizeScales = 1.0f;
 };
