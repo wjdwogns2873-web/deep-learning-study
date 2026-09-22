@@ -46,7 +46,15 @@
                             <!-- d-flex flex-wrap gap-2 로 설정하여 화면이 좁아지면 줄바꿈이 자연스럽게 일어나도록 수정 -->
                             <div class="d-flex flex-wrap justify-content-between gap-2">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fp16" value="FP16" checked>
+                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_drogon_fp16" value="DROGON_CPP_FP16" checked>
+                                    <label class="form-check-label fw-semibold text-primary" for="v_drogon_fp16">C++ Drogon FP16</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_drogon_fp32" value="DROGON_CPP_FP32">
+                                    <label class="form-check-label fw-semibold text-primary" for="v_drogon_fp32">C++ Drogon FP32</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fp16" value="FP16">
                                     <label class="form-check-label fw-semibold" for="v_fp16">ONNX FP16</label>
                                 </div>
                                 <div class="form-check">
@@ -110,6 +118,10 @@
                         <div class="mb-3 model-selector">
                             <label class="form-label text-dark fw-bold mb-2">추론 엔진</label>
                             <div class="d-flex flex-wrap justify-content-between gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_drogon" value="DROGON_CPP" checked>
+                                    <label class="form-check-label fw-semibold text-primary" for="i_drogon">⚡ C++ Drogon</label>
+                                </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="imageModelType" id="i_fp16" value="FP16" checked>
                                     <label class="form-check-label fw-semibold" for="i_fp16">ONNX FP16</label>
@@ -195,15 +207,32 @@
 
     // WebSocket 연결
     const host = window.location.hostname;
-    const socket = new WebSocket(`ws://${host}:8000/ws/detect`);
-    socket.binaryType = 'blob';
+    // const host = "jaehun-cv.duckdns.org";
+    // 8000: FastAPI, 8889: Drogon C++
+    let socket = null;
+
+    function connectionWebSocket(modelType) {
+        if (socket) socket.close();
+
+        console.log('modelType: ', modelType);
+
+        const wsEndPoint = (modelType === 'DROGON_CPP_FP16' || modelType === 'DROGON_CPP_FP32') ? `ws://${host}:8889/yolo` : `ws://${host}:8000/ws/detect`;
+        socket = new WebSocket(wsEndPoint);
+        socket.binaryType = 'blob';
+
+        socket.onopen = () => {
+            console.log(`WebSocket 연결 성공: `, wsEndPoint);
+            video.play();
+        }
+
+        socket.onerror = (error) => console.error('WebSocket 에러', error);
+        socket.onclose = () => console.log('WebSocket 연결 종료');
+    }
 
     let currentBlobUrl = null;
     let lastCalledTime = performance.now();
     let isProcessing = false;
     let maxFps = 0; // Max FPS 기록
-
-    socket.onopen = () => console.log('WebSocket 연결 성공');
 
     // 선택된 동영상 모델 타입 반환
     function getSelectedVideoModel() {
@@ -230,6 +259,9 @@
             return;
         }
 
+        const selectedModel = getSelectedVideoModel();
+        connectionWebSocket(selectedModel); // 선택된 추론 엔진 포트로 웹소켓 재생성
+
         // 재생 시작 시 라디오 버튼 비활성화하여 추론 중 모델 변경 방지
         setVideoRadioDisabled(true);
         videoInput.disabled = true;
@@ -238,7 +270,7 @@
         resultFrame.style.display = 'inline-block';
         clickGuide.classList.remove('d-none');
 
-        video.play();
+        // video.play();
     });
 
     // [초기화] 버튼 로직

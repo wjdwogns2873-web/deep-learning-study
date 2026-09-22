@@ -8,20 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "c47f2a47f96c5a4d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "딥러닝 메모장 241 ~ 260.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "딥러닝 메모장 241 ~ 260"
-            }
-          },
-          {
             "id": "cdf7709bf26490ea",
             "type": "leaf",
             "state": {
@@ -61,6 +47,20 @@
               },
               "icon": "lucide-file",
               "title": "C++ 021 ~ 040"
+            }
+          },
+          {
+            "id": "5413230d2fe8d05a",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "C++ 041 ~ 060.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "C++ 041 ~ 060"
             }
           }
         ],
@@ -233,10 +233,16 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "c6e2b8fbad95f94c",
+  "active": "5413230d2fe8d05a",
   "lastOpenFiles": [
-    "C++ 001 ~ 020.md",
+    "images/Pasted image 20260922212042.png",
+    "딥러닝 메모장 261 ~ 280.md",
+    "딥러닝 메모장 241 ~ 260.md",
+    "C++ 041 ~ 060.md",
     "C++ 021 ~ 040.md",
+    "C++ 001 ~ 020.md",
+    "images/Pasted image 20260921155536.png",
+    "images/Pasted image 20260920203254.png",
     "images/Pasted image 20260920011102.png",
     "images/Pasted image 20260918005405.png",
     "images/Pasted image 20260916175243.png",
@@ -245,10 +251,6 @@
     "images/Pasted image 20260916152018.png",
     "images/Pasted image 20260916150847.png",
     "images/Pasted image 20260916150616.png",
-    "images/Pasted image 20260916004432.png",
-    "images/Pasted image 20260915221153.png",
-    "딥러닝 메모장 261 ~ 280.md",
-    "딥러닝 메모장 241 ~ 260.md",
     "Unity C# 001 ~ 020.md",
     "딥러닝 메모장 181 ~ 200.md",
     "JS 메모장 001 ~ 020.md",
@@ -270,7 +272,6 @@
     "색인.md",
     "04_Apple_classification.ipynb.md",
     "무제",
-    "환영합니다!.md",
     "images",
     "무제.base",
     "무제 1.base"

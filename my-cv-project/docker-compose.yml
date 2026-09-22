@@ -31,6 +31,18 @@ services:
       - fastapi-service
     restart: always
 
+  # 3. C++ AI 서버 (Drogon)
+  drogon-service:
+    build:
+      context: ./drogon-app
+      dockerfile: Dockerfile
+    container_name: drogon-container
+    ports:
+      - "8889:8889" # 호스트(Mac) 8889 -> 컨테이너 내부 8889
+    volumes:
+      - ./models:/app/models
+    restart: always # 서버 재부팅 시 자동 실행
+
   # 🔥 DuckDNS 자동 IP 갱신 컨테이너 추가
   duckdns:
     image: lscr.io/linuxserver/duckdns:latest

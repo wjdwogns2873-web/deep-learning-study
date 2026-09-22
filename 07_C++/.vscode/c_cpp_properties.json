@@ -6,6 +6,8 @@
         "${workspaceFolder}",
         "${workspaceFolder}/**",
         "/opt/homebrew/include",
+        "/opt/homebrew/include/drogon",
+        "/opt/homebrew/include/trantor",
         "/opt/homebrew/include/opencv5",
         "/opt/homebrew/include/onnxruntime",
         "/opt/homebrew/opt/onnxruntime/include"
@@ -18,8 +20,8 @@
       "compilerPath": "/usr/bin/clang++",
       "cStandard": "c17",
       "cppStandard": "c++17",
-      "intelliSenseMode": "macos-clang-arm64",
-      "configurationProvider": "ms-vscode.cmake-tools"
+      "intelliSenseMode": "macos-clang-arm64"
+      // "configurationProvider": "ms-vscode.cmake-tools"
     }
   ],
   "version": 4
