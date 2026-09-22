@@ -189,3 +189,4 @@ cython_debug/
 06_unity/
 *.onnx
 *.pt
+*.jar
