@@ -12,7 +12,7 @@ int main() {
             resp->addHeader("Access-Control-Allow-Headers", "*");
         })
         .addListener("0.0.0.0", 8889)  // 8889 포트로 대기
-        .setThreadNum(4)               // 워커 스레드 개수 설정
+        .setThreadNum(8)               // 워커 스레드 개수 설정
         .run();
 
     return 0;
