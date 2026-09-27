@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(yolo_ort4 CXX)
 
+# ⭐ 인텔리센스용 compile_commands.json 자동 생성 설정 추가
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -34,6 +36,8 @@ add_executable(yolo_ort4
     YoloORT.hpp
     WebSocketController.cpp
     WebSocketController.h
+    DetectController.cpp
+    DetectController.h
 )
 
 # 6. 라이브러리 링킹

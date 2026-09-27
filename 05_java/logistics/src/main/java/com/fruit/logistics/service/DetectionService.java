@@ -34,8 +34,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class DetectionService {
-    @Value("${ai.server.url}") // http://localhost:8000
-    private String aiServerUrl;
+//    @Value("${ai.server.url}") // http://localhost:8000
+//    private String aiServerUrl;
+
+    @Value("${ai.python.url:http://localhost:8000}")
+    private String pythonServerUrl;
+
+    @Value("${ai.cpp.url:http://localhost:8889}")
+    private String cppServerUrl;
 
     public byte[] requestObjectDetection(MultipartFile file,
                                          double conf_value,
@@ -47,8 +53,19 @@ public class DetectionService {
             throw new IllegalArgumentException("이미지 파일을 선택해 주세요.");
         }
 
+        String targetUrl;
+        boolean isCppEngine = model_type.startsWith("DROGON_CPP");
+
+        if (isCppEngine) {
+            targetUrl = cppServerUrl + "/api/detect"; // C++ Drogon REST API
+        } else {
+            targetUrl = pythonServerUrl + "/predict/image"; // Python FastAPI
+        }
+
+        log.info(targetUrl);
+
         RestTemplate restTemplate = new RestTemplate();
-        String fullUrl = aiServerUrl + "/predict/image";
+//        String fullUrl = aiServerUrl + "/predict/image";
 
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -71,10 +88,11 @@ public class DetectionService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            log.info("AI 서버({})로 요청 전송 [Engine: {}]", fullUrl, model_type);
+//            log.info("AI 서버({})로 요청 전송 [Engine: {}]", fullUrl, model_type);
+            log.info("AI 추론 요청 전송 -> Target: [{}] | Engine: [{}]", targetUrl, model_type);
 
             // FastAPI 서버로 POST 요청
-            ResponseEntity<byte[]> response = restTemplate.postForEntity(fullUrl, requestEntity, byte[].class);
+            ResponseEntity<byte[]> response = restTemplate.postForEntity(targetUrl, requestEntity, byte[].class);
 
             return response.getBody();
 
@@ -82,8 +100,8 @@ public class DetectionService {
             log.error("파일 변환 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("이미지 파일 처리 실패");
         } catch (Exception e) {
-            log.error("파이썬 AI 서버 통신 에러: {}", e.getMessage());
-            throw new RuntimeException("AI 서버 연동 실패 - 파이썬 FastAPI 서버 실행 여부를 확인하세요.");
+            log.error("AI 추론 서버 통신 에러 (Target: {}): {}", targetUrl, e.getMessage());
+            throw new RuntimeException("AI 추론 서버 연동 실패 - " + (isCppEngine ? "C++ Drogon" : "Python FastAPI"));
         }
     }
 

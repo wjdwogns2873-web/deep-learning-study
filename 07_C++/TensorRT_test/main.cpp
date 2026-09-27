@@ -34,7 +34,7 @@ int main() {
 
         for (const auto& det : detections) {
             cv::rectangle(frame, det.box, cv::Scalar(0, 255, 0), 2);
-            std::string label = "Class " + std::to_string(det.classId) + ": " + cv::format("%.2f", det.conf);
+            std::string label = "Class " + std::to_string(det.classId) + ": " + cv::format("%.2f", det.confidence);
             cv::putText(frame, label, cv::Point(det.box.x, det.box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
         }
 

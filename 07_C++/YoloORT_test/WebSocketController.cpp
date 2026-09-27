@@ -26,7 +26,7 @@ void WebSocketController::handleNewMessage(const drogon::WebSocketConnectionPtr&
     if (message.size() < 4 + jsonLen) return;
 
     std::string jsonStr = message.substr(4, jsonLen);
-    std::string modelType = "DROGON_CPP";
+    std::string modelType;
 
     try {
         auto j = json::parse(jsonStr);

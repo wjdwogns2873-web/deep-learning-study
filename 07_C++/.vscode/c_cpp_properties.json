@@ -10,7 +10,8 @@
         "/opt/homebrew/include/trantor",
         "/opt/homebrew/include/opencv5",
         "/opt/homebrew/include/onnxruntime",
-        "/opt/homebrew/opt/onnxruntime/include"
+        // "/opt/homebrew/opt/onnxruntime/include",
+        "/opt/homebrew/include/json"
       ],
       "defines": [],
       "macFrameworkPath": [
@@ -20,8 +21,9 @@
       "compilerPath": "/usr/bin/clang++",
       "cStandard": "c17",
       "cppStandard": "c++17",
-      "intelliSenseMode": "macos-clang-arm64"
+      "intelliSenseMode": "macos-clang-arm64",
       // "configurationProvider": "ms-vscode.cmake-tools"
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json"
     }
   ],
   "version": 4

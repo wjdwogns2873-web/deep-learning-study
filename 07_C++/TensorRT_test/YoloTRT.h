@@ -12,7 +12,7 @@
 
 struct Detection {
     cv::Rect box;
-    float conf;
+    float confidence;
     int classId;
 };
 

@@ -70,7 +70,7 @@ void YoloTRT::preprocessLetterbox(const cv::Mat& srcImg, LetterboxInfo& info) {
     int channelSize = 640 * 640;
     std::vector<cv::Mat> channels(3);
     for (int i = 0; i < 3; i++) {
-        channels[i] = cv::Mat(letterboxImg.cols, letterboxImg.rows, CV_32FC1, inputHost.data() + i * channelSize);
+        channels[i] = cv::Mat(letterboxImg.rows, letterboxImg.cols, CV_32FC1, inputHost.data() + i * channelSize);
     }
     cv::split(letterboxImg, channels);
 }

@@ -53,18 +53,18 @@
                                     <input class="form-check-input" type="radio" name="videoModelType" id="v_drogon_fp32" value="DROGON_CPP_FP32">
                                     <label class="form-check-label fw-semibold text-primary" for="v_drogon_fp32">C++ Drogon FP32</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fp16" value="FP16">
-                                    <label class="form-check-label fw-semibold" for="v_fp16">ONNX FP16</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fp32" value="FP32">
-                                    <label class="form-check-label fw-semibold" for="v_fp32">ONNX FP32</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_pt" value="PyTorch">
-                                    <label class="form-check-label fw-semibold" for="v_pt">PyTorch (.pt)</label>
-                                </div>
+<!--                                <div class="form-check">-->
+<!--                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fastapi_fp16" value="FASTAPI_PYTHON_FP16">-->
+<!--                                    <label class="form-check-label fw-semibold" for="v_fastapi_fp16">Python ONNX FP16</label>-->
+<!--                                </div>-->
+<!--                                <div class="form-check">-->
+<!--                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fastapi_fp32" value="FASTAPI_PYTHON_FP32">-->
+<!--                                    <label class="form-check-label fw-semibold" for="v_fastapi_fp32">Python ONNX FP32</label>-->
+<!--                                </div>-->
+<!--                                <div class="form-check">-->
+<!--                                    <input class="form-check-input" type="radio" name="videoModelType" id="v_fastapi_pt" value="FASTAPI_PYTHON_PyTorch">-->
+<!--                                    <label class="form-check-label fw-semibold" for="v_fastapi_pt">PyTorch (.pt)</label>-->
+<!--                                </div>-->
                             </div>
                         </div>
 
@@ -119,21 +119,25 @@
                             <label class="form-label text-dark fw-bold mb-2">추론 엔진</label>
                             <div class="d-flex flex-wrap justify-content-between gap-2">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_drogon" value="DROGON_CPP" checked>
-                                    <label class="form-check-label fw-semibold text-primary" for="i_drogon">⚡ C++ Drogon</label>
+                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_drogon_fp16" value="DROGON_CPP_FP16" checked>
+                                    <label class="form-check-label fw-semibold text-primary" for="i_drogon_fp16">C++ Drogon FP16</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_fp16" value="FP16" checked>
-                                    <label class="form-check-label fw-semibold" for="i_fp16">ONNX FP16</label>
+                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_drogon_fp32" value="DROGON_CPP_FP32">
+                                    <label class="form-check-label fw-semibold text-primary" for="i_drogon_fp32">C++ Drogon FP32</label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_fp32" value="FP32">
-                                    <label class="form-check-label fw-semibold" for="i_fp32">ONNX FP32</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_pt" value="PyTorch">
-                                    <label class="form-check-label fw-semibold" for="i_pt">PyTorch (.pt)</label>
-                                </div>
+<!--                                <div class="form-check">-->
+<!--                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_fastapi_fp16" value="FASTAPI_PYTHON_FP16">-->
+<!--                                    <label class="form-check-label fw-semibold" for="i_fastapi_fp16">Python ONNX FP16</label>-->
+<!--                                </div>-->
+<!--                                <div class="form-check">-->
+<!--                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_fastapi_fp32" value="FASTAPI_PYTHON_FP32">-->
+<!--                                    <label class="form-check-label fw-semibold" for="i_fastapi_fp32">Python ONNX FP32</label>-->
+<!--                                </div>-->
+<!--                                <div class="form-check">-->
+<!--                                    <input class="form-check-input" type="radio" name="imageModelType" id="i_fastapi_pt" value="FASTAPI_PYTHON_PyTorch">-->
+<!--                                    <label class="form-check-label fw-semibold" for="i_fastapi_pt">PyTorch (.pt)</label>-->
+<!--                                </div>-->
                             </div>
                         </div>
 
@@ -166,30 +170,120 @@
         </div>
 
         <!-- 포트폴리오 웹 하단 기술 요약 카드 -->
-        <div style="margin-top: 40px; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: sans-serif; text-align: left;">
-            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; color: #111827; font-weight: bold;">
-                🛠️ 핵심 파이프라인 및 최적화 구조
-            </h3>
-            <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8; font-size: 14px;">
-                <li>
-                    <strong style="color: #1d4ed8;">AI 모델 및 추론 엔진:</strong> YOLOv8 기반 과일 객체 탐지 (PyTorch, ONNX Runtime FP32/FP16 환경별 추론 속도 비교)
-                </li>
-                <li>
-                    <strong style="color: #1d4ed8;">3D 합성 데이터 활용:</strong> Unity(C#) 3D 공간 연산으로 자체 생성한 데이터셋 기반 학습
-                </li>
-                <li>
-                    <strong style="color: #1d4ed8;">실시간 동영상 탐지 (웹소켓):</strong> FastAPI 웹소켓 통신 + 바이너리 프로토콜 및 비동기 큐(<code style="background-color: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px;">asyncio.Queue</code>) 적용으로 프레임 병목 방지
-                </li>
-                <li>
-                    <strong style="color: #1d4ed8;">단건 이미지 탐지 (HTTP):</strong> REST API(HTTP POST) 기반의 빠른 단발성 이미지 추론 및 결과 응답
-                </li>
-            </ul>
-        </div>
+<!--        <div style="margin-top: 40px; padding: 24px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: sans-serif; text-align: left;">-->
+<!--            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; color: #111827; font-weight: bold;">-->
+<!--                🛠️ 핵심 파이프라인 및 최적화 구조-->
+<!--            </h3>-->
+<!--            <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8; font-size: 14px;">-->
+<!--                <li>-->
+<!--                    <strong style="color: #1d4ed8;">다양한 AI 추론 엔진 지원:</strong> PyTorch, Python ONNX, C++ Drogon 환경(FP32/FP16)을 직접 선택하여 엔진별 처리 속도 비교 가능-->
+<!--                </li>-->
+<!--                <li>-->
+<!--                    <strong style="color: #1d4ed8;">3D 합성 데이터 활용:</strong> Unity(C#) 3D 공간 연산으로 자체 생성한 데이터셋 기반 학습-->
+<!--                </li>-->
+<!--                <li>-->
+<!--                    <strong style="color: #1d4ed8;">실시간 동영상 탐지 (웹소켓):</strong> 빠르게 데이터를 주고받기 위해 웹소켓 통신 사용-->
+<!--                </li>-->
+<!--                <li>-->
+<!--                    <strong style="color: #1d4ed8;">단건 이미지 탐지 (HTTP):</strong> REST API(HTTP POST) 기반의 빠른 단발성 이미지 추론 및 결과 응답-->
+<!--                </li>-->
+<!--            </ul>-->
+<!--        </div>-->
+        <!-- 📊 R&D 벤치마킹 및 성능 비교 세션 -->
+        <div class="card p-4 mt-5 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">📊 추론 엔진별 자원 소모 및 처리 속도 벤치마킹</h5>
+                <span class="badge bg-dark">M4 Mac mini Native / PM2</span>
+            </div>
 
+            <!-- 1. 차트 영역 (그래프) -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="p-3 bg-light rounded text-center">
+                        <h6 class="fw-semibold text-secondary mb-2">🚀 최대 처리 속도 (MAX FPS)</h6>
+                        <div style="height: 220px; position: relative;">
+                            <canvas id="fpsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <h6 class="fw-semibold text-secondary mb-2">💾 추론 중 최고 메모리 (Peak RAM)</h6>
+                        <div style="height: 220px; position: relative;">
+                            <canvas id="ramChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 상세 벤치마킹 표 -->
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered text-center align-middle fs-7 mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>추론 엔진</th>
+                        <th>대기 메모리 (Idle)</th>
+                        <th>추론 중 Peak RAM</th>
+                        <th>평균 FPS</th>
+                        <th>최대 FPS (MAX)</th>
+                        <th>상태 / 비고</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="table-primary fw-semibold">
+                        <td>C++ Drogon FP32</td>
+                        <td>164 MB</td>
+                        <td>187 MB</td>
+                        <td>11 FPS</td>
+                        <td>21 FPS</td>
+                        <td><span class="badge bg-primary">메인 서빙 엔진 (권장)</span></td>
+                    </tr>
+                    <tr class="table-info fw-semibold">
+                        <td>C++ Drogon FP16</td>
+                        <td>164 MB</td>
+                        <td>187 MB</td>
+                        <td>7 FPS</td>
+                        <td>11 FPS</td>
+                        <td><span class="badge bg-info text-dark">초경량 서빙 엔진</span></td>
+                    </tr>
+                    <tr class="text-muted">
+                        <td>FastAPI FP32</td>
+                        <td>91 MB</td>
+                        <td>317 MB</td>
+                        <td>15 FPS</td>
+                        <td>27 FPS</td>
+                        <td><span class="badge bg-secondary">파이프라인 다이어트 (제거)</span></td>
+                    </tr>
+                    <tr class="text-muted">
+                        <td>FastAPI FP16</td>
+                        <td>91 MB</td>
+                        <td>237 MB</td>
+                        <td>12 FPS</td>
+                        <td>18 FPS</td>
+                        <td><span class="badge bg-secondary">파이프라인 다이어트 (제거)</span></td>
+                    </tr>
+                    <tr class="text-muted">
+                        <td>FastAPI PyTorch (.pt)</td>
+                        <td>91 MB</td>
+                        <td>1,154 MB</td>
+                        <td>10 FPS</td>
+                        <td>26 FPS</td>
+                        <td><span class="badge bg-danger">메모리 오버헤드로 제거</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-muted fs-7 mt-3 mb-0">
+                * M4 Mac mini (macOS Native / PM2 관리) 환경에서 측정된 지표입니다.<br>
+                * C++ Drogon 적용을 통해 PyTorch 대비 <strong class="text-primary">RAM 점유율을 약 84% 절감 (1,154MB → 187MB)</strong>하여 경량 및 서비스 확장성을 확보했습니다.
+            </p>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
     // --- Elements ---
@@ -413,6 +507,53 @@
     function updateIoU(val) {
         document.getElementById('iou_value').innerText = (Number(val) / 100).toFixed(2);
     }
+
+    // --- 벤치마킹 그래프 (Chart.js) 초기화 ---
+    document.addEventListener("DOMContentLoaded", function () {
+        const labels = ['Drogon FP32', 'Drogon FP16', 'FastAPI FP32', 'FastAPI FP16', 'PyTorch (.pt)'];
+
+        // 1. MAX FPS 차트
+        const ctxFps = document.getElementById('fpsChart').getContext('2d');
+        new Chart(ctxFps, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'MAX FPS',
+                    data: [21, 11, 27, 18, 26],
+                    backgroundColor: ['#0d6efd', '#0dcaf0', '#adb5bd', '#adb5bd', '#dc3545'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'FPS' } } }
+            }
+        });
+
+        // 2. Peak RAM 차트
+        const ctxRam = document.getElementById('ramChart').getContext('2d');
+        new Chart(ctxRam, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Peak RAM (MB)',
+                    data: [187, 187, 317, 237, 1154],
+                    backgroundColor: ['#0d6efd', '#0dcaf0', '#adb5bd', '#adb5bd', '#dc3545'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'MB' } } }
+            }
+        });
+    });
 </script>
 </body>
 </html>
