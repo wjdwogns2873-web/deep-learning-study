@@ -12,6 +12,14 @@ YoloORT::YoloORT(const std::string& modelPath, bool isFP16, const cv::Size& inpu
     // M4 Mac 호스트 환경일 경우 CoreML EP 사용 가능
 #if defined(__APPLE__)
     uint32_t coreml_flags = 0;
+    
+    // 1. 전체 그래프 대신 지원되는 하드웨어 서브그래프만 CoreML로 실행 (Fallback 방지 핵심)
+    coreml_flags |= COREML_FLAG_ENABLE_ON_SUBGRAPH;
+    
+    // 2. Apple Neural Engine(ANE) / GPU 가속 기기 전용 사용 (CPU 전용 모드 차단)
+    coreml_flags |= COREML_FLAG_ONLY_ENABLE_DEVICE_WITH_ANE;
+
+    // OrtSessionOptionsAppendExecutionProvider_CoreML 호출
     Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_CoreML(
         static_cast<OrtSessionOptions*>(sessionOptions), coreml_flags));
 #endif
@@ -37,24 +45,35 @@ std::vector<Detection> YoloORT::detect(const cv::Mat& frame, float confThreshold
     Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
 
     std::vector<Ort::Value> inputTensors;
-
     LetterboxInfo info;
 
+    // if문 밖으로 벡터 선언을 빼서 detect 함수가 끝날 때까지 메모리가 해제되지 않도록 보장
+    std::vector<float> fp32Buffer;
+    std::vector<Ort::Float16_t> fp16Buffer;
+
     if (isFP16Mode) {
-        std::vector<Ort::Float16_t> inputTensorValues(inputTensorSize);
-        info = preprocessFP16(frame, inputTensorValues);
+        fp16Buffer.resize(inputTensorSize);
+        info = preprocessFP16(frame, fp16Buffer);
+
+        // std::vector<Ort::Float16_t> inputTensorValues(inputTensorSize);
+        // info = preprocessFP16(frame, inputTensorValues);
 
         inputTensors.push_back(Ort::Value::CreateTensor<Ort::Float16_t>(
-            memoryInfo, inputTensorValues.data(), inputTensorSize, inputShape.data(), inputShape.size()));
+            memoryInfo, fp16Buffer.data(), inputTensorSize, inputShape.data(), inputShape.size()));
     } else {
-        std::vector<float> inputTensorValues(inputTensorSize);
-        info = preprocess(frame, inputTensorValues);
+
+        fp32Buffer.resize(inputTensorSize);
+        info = preprocess(frame, fp32Buffer);
+
+        // std::vector<float> inputTensorValues(inputTensorSize);
+        // info = preprocess(frame, inputTensorValues);
 
         inputTensors.push_back(Ort::Value::CreateTensor<float>(
-            memoryInfo, inputTensorValues.data(), inputTensorSize, inputShape.data(), inputShape.size()));
+            memoryInfo, fp32Buffer.data(), inputTensorSize, inputShape.data(), inputShape.size()));
     }
 
     // ONNX Runtime C++ 비동기/동기 추론
+    // 이제 CoreML 연산이 수행되는 동안에도 fp32Buffer / fp16Buffer의 메모리가 안전하게 유지됩니다.
     auto outputTensors = session->Run(
         Ort::RunOptions{nullptr}, 
         inputNamePtrs.data(), 
@@ -90,7 +109,7 @@ LetterboxInfo YoloORT::preprocessFP16(const cv::Mat& frame, std::vector<Ort::Flo
     // FP32 전처리 후 Ort::Float16_t 변환 매핑
     std::vector<float> fp32Values(inputTensorValues.size());
     LetterboxInfo info = preprocess(frame, fp32Values);
-
+    
     for (size_t i = 0; i < fp32Values.size(); i++) {
         inputTensorValues[i] = Ort::Float16_t(fp32Values[i]);
     }
@@ -105,19 +124,45 @@ std::vector<Detection> YoloORT::postprocess(std::vector<Ort::Value>& outputTenso
     int classCount = static_cast<int>(outputShape[1] - 4);
     int numAnchors = static_cast<int>(outputShape[2]);
 
-    std::vector<float> floatData(outputShape[1] * numAnchors);
+
+    size_t totalElements = outputShape[1] * numAnchors; // 84 * 8400
+
+    // 최종적으로 데이터를 가리킬 포인터 선언
+    float* data = nullptr;
+
+    // FP16일 때만 변환용 임시 버퍼를 힙 메모리에 할당
+    std::vector<float> fp16ConversionBuffer;
 
     if (isFP16Mode) {
+        fp16ConversionBuffer.resize(totalElements);
         auto* fp16Data = outputTensors[0].GetTensorMutableData<Ort::Float16_t>();
-        for (size_t i = 0; i < floatData.size(); ++i) {
-            floatData[i] = static_cast<float>(fp16Data[i]);
+
+        for (size_t i = 0; i < totalElements; ++i) {
+            fp16ConversionBuffer[i] = static_cast<float>(fp16Data[i]);
         }
+        // FP16은 변환된 임시 버퍼의 주소를 가리키게 함
+        data = fp16ConversionBuffer.data();
     } else {
-        auto* fp32Data = outputTensors[0].GetTensorMutableData<float>();
-        std::copy(fp32Data, fp32Data + floatData.size(), floatData.begin());
+        // 새로운 메모리 할당 및 std::copy를 완전히 제거하고, ONNX 오리지널 내부 버퍼 포인터를 그대로 다이렉트 바인딩
+        data = outputTensors[0].GetTensorMutableData<float>();
     }
 
-    float* data = floatData.data();
+
+
+
+    // std::vector<float> floatData(outputShape[1] * numAnchors);
+
+    // if (isFP16Mode) {
+    //     auto* fp16Data = outputTensors[0].GetTensorMutableData<Ort::Float16_t>();
+    //     for (size_t i = 0; i < floatData.size(); ++i) {
+    //         floatData[i] = static_cast<float>(fp16Data[i]);
+    //     }
+    // } else {
+    //     auto* fp32Data = outputTensors[0].GetTensorMutableData<float>();
+    //     std::copy(fp32Data, fp32Data + floatData.size(), floatData.begin());
+    // }
+
+    // float* data = floatData.data();
 
     std::vector<int> classIds;
     std::vector<float> confidences;

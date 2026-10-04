@@ -6,6 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+
 # 1. Apple Silicon (M1~M4) Homebrew 기본 검색 경로 추가
 if(APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
