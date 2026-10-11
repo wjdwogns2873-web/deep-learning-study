@@ -1,10 +1,16 @@
-# YOLOv8 전처리 및 후처리 포함 추론 속도 비교 (PyTorch vs ONNX Runtime vs TensorRT)
+# YOLOv8 동영상 스트리밍 처리 속도 비교 (PyTorch vs ONNX Runtime vs TensorRT)
 
-본 문서는 비디오 디코딩, 전처리(Resize, BGR to RGB, Normalization), 추론, 후처리(NMS) 및 결과 시각화(Bounding Box Rendering)를 모두 포함한 전체 파이프라인(End-to-End) 속도를 측정한 벤치마크 결과입니다. 동일한 비디오 조건(3,129 Frames)에서 연속 수행한 결과를 바탕으로 작성되었습니다.
+YOLOv8n 모델의 동영상 스트리밍 처리 속도를 벤치마킹한 결과입니다.
+
+제 컴퓨터는 M4 맥미니라서 TensorRT 환경 구축이 안되기 때문에 구글 코랩의 T4 GPU를 사용하였습니다.
+
+동일한 조건에서 1000회 추론을 했을 때 평균, 최소, 최대 지연 시간 및 FPS를 측정했습니다.
+
+한 프레임당 평균 소요 시간은 9.49 ms입니다. FPS로 따지면 105.3 FPS인데, 이것이 바로 C++을 쓰는 이유인 것 같습니다.
 
 ---
 
-### 📊 요약 결과 (전/후처리 및 디코딩 포함 3,129 Frame 측정)
+### 📊 요약 결과 (전/후처리 및 디코딩 포함 3129 Frame 측정)
 
 | 실행 환경 및 프레임워크 | 평균 소요 시간 (Avg) | 최소 소요 시간 (Min) | 최대 소요 시간 (Max) | 평균 처리 속도 (FPS) |
 | :--- | :---: | :---: | :---: | :---: |
@@ -98,7 +104,7 @@ Avg FPS: 53.6 FPS
 </details>
 
 <details>
-<summary><b>2. ONNX Runtime</b></summary>
+<summary><b>2. ONNX Runtime 측정 코드 및 결과</b></summary>
 
 ```Python
 import onnxruntime as ort
@@ -264,7 +270,7 @@ context = engine.create_execution_context()
 </details>
 
 <details>
-<summary><b>3. Python TRT</b></summary>
+<summary><b>3. Python TensorRT (기본 메모리 할당) 측정 코드 및 결과</b></summary>
 
 ```Python
 input_shape = (1, 3, 640, 640)
@@ -382,7 +388,7 @@ Avg FPS: 78.5 FPS
 </details>
 
 <details>
-<summary><b>4. Python TRT (Zero-Copy)</b></summary>
+<summary><b>4. Python TensorRT (Zero-Copy Pinned Memory) 측정 코드 및 결과</b></summary>
 
 ```Python
 input_shape = (1, 3, 640, 640)
@@ -786,7 +792,7 @@ int main() {
     double min = *std::min_element(latencies.begin(), latencies.end());
     double max = *std::max_element(latencies.begin(), latencies.end());
 
-    std::cout << "\n================ [5. C++ Native TRT Video 벤치마크] ================" << std::endl;
+    std::cout << "================ [5. C++ Native TRT Video 벤치마크] ================" << std::endl;
     std::cout << "처리 프레임 수: " << frameCount << " / " << totalFrames << std::endl;
     std::cout << "Avg Latency: " << cv::format("%.2f", avg) << " ms" << std::endl;
     std::cout << "Min Latency: " << cv::format("%.2f", min) << " ms" << std::endl;
