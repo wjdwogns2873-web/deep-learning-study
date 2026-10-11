@@ -17,7 +17,7 @@
 
 단순히 평균 소요시간만 단축하는 게 아니라, Max Latency가 135.35ms에서 21.76ms로 약 84% 대폭 감소했습니다.
 
-> 👉 [상세 실험 보고서 및 전체 소스코드 보기](https://github.com/wjdwogns2873-web/deep-learning-study/blob/main/09_%EB%B2%A4%EC%B9%98%EB%A7%88%ED%81%AC_%EB%B3%B4%EA%B3%A0%EC%84%9C/5%EA%B0%80%EC%A7%80_%EB%AA%A8%EB%8D%B8_%EC%A0%84%EC%B2%98%EB%A6%AC_%ED%9B%84%EC%B2%98%EB%A6%AC_%ED%8F%AC%ED%95%A8_%EC%B6%94%EB%A1%A0_%EC%86%8D%EB%8F%84_%EB%B9%84%EA%B5%90.md)
+> 👉 [상세 실험 보고서 및 전체 소스코드 보기](https://github.com/wjdwogns2873-web/deep-learning-study/blob/main/09_%EB%B2%A4%EC%B9%98%EB%A7%88%ED%81%AC_%EB%B3%B4%EA%B3%A0%EC%84%9C/5%EA%B0%80%EC%A7%80_%EB%AA%A8%EB%8D%B8_%EB%8F%99%EC%98%81%EC%83%81_%EC%8A%A4%ED%8A%B8%EB%A6%AC%EB%B0%8D_FPS_%EB%B9%84%EA%B5%90.md)
 
 
 🌐 **포트폴리오 Web**: http://jaehun-cv.duckdns.org/
