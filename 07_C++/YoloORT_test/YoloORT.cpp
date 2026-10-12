@@ -102,6 +102,19 @@ LetterboxInfo YoloORT::preprocess(const cv::Mat& frame, std::vector<float>& inpu
     }
     cv::split(letterbox_img, channels);
 
+
+    // int channelSize = inputImageSize.width * inputImageSize.height;
+    // // C++ 표준 포인터 캐스팅
+    // const float* data = reinterpret_cast<float*>(letterbox_img.data);
+
+    // // ONNX Runtime 입력 버퍼에 Direct Pointer Write
+    // float* dest = inputTensorValues.data();
+    // for (int i = 0; i < channelSize; ++i) {
+    //     dest[i] = data[i * 3 + 0]; // R
+    //     dest[i + channelSize] = data[i * 3 + 1]; // G
+    //     dest[i + channelSize * 2] = data[i * 3 + 2]; // B
+    // }
+
     return info;
 }
 

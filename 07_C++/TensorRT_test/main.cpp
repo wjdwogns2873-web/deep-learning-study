@@ -1,81 +1,85 @@
 #include "YoloTRT.h"
 #include <chrono>
+#include <numeric>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <opencv2/opencv.hpp>
 
-// 비디오 스트리밍 탐지
 int main() {
+    // 1. C++ TensorRT 엔진 로드
     YoloTRT detector("yolov8n.engine");
 
-    cv::VideoCapture cap("sample_video.mp4");
+    // 2. 비디오 파일 열기
+    std::string videoPath = "./test_videos/sample.mp4";
+    cv::VideoCapture cap(videoPath);
+
     if (!cap.isOpened()) {
-        std::cerr << "비디오 파일을 열 수 없습니다." << std::endl;
+        std::cerr << "비디오 파일을 열 수 없습니다: " << videoPath << std::endl;
         return -1;
     }
 
-    int width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-    int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-    double fps = cap.get(cv::CAP_PROP_FPS);
+    int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
+    double inputFps = cap.get(cv::CAP_PROP_FPS);
+    std::cout << "입력 비디오 정보: " << totalFrames << " Frames, " << inputFps << " FPS" << std::endl;
 
-    // 결과 비디오 저장용 Writer
-    cv::VideoWriter writer("output_video.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, cv::Size(width, height));
-
+    // 3. Warm-up (첫 프레임 기반 50회 예열)
     cv::Mat frame;
-    int frameCount = 0;
-
-    std::cout << "비디오 추론 시작.." << std::endl;
-
-    while (cap.read(frame)) {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        auto detections = detector.detect(frame, 0.25, 0.45);
-
-        auto end = std::chrono::high_resolution_clock::now();
-        double durationMs = std::chrono::duration<double, std::milli>(end - start).count();
-        double currentFps = 1000.0 / durationMs;
-
-        for (const auto& det : detections) {
-            cv::rectangle(frame, det.box, cv::Scalar(0, 255, 0), 2);
-            std::string label = "Class " + std::to_string(det.classId) + ": " + cv::format("%.2f", det.confidence);
-            cv::putText(frame, label, cv::Point(det.box.x, det.box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
-        }
-
-        std::string fpsText = cv::format("FPS: %.1f (%.1f ms)", currentFps, durationMs);
-        cv::putText(frame, fpsText, cv::Point(20, 40), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
-
-        writer.write(frame);
-
-        frameCount++;
-        if (frameCount % 30 == 0) {
-            std::cout << frameCount << " 프레임 처리 완료.. (" << fpsText << ")" << std::endl;
+    cap >> frame;
+    if (!frame.empty()) {
+        for (int i = 0; i < 50; ++i) {
+            detector.detect(frame, 0.25f, 0.45f);
         }
     }
 
-    std::cout << "모든 비디오 프레임 처리 완료! (output_video.mp4 저장)" << std::endl;
+    // 비디오 읽기 위치를 처음 프레임으로 리셋
+    cap.set(cv::CAP_PROP_POS_FRAMES, 0);
+
+    std::vector<double> latencies;
+    latencies.reserve(totalFrames);
+    int frameCount = 0;
+
+    // 4. 동영상 프레임 단위 End-to-End 측정 (디코딩 + 전처리 + H2D + 추론 + D2H + NMS + 시각화)
+    while (true) {
+        cap >> frame;
+        if (frame.empty()) break;
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // 전처리 -> TRT 추론 -> NMS 후처리
+        auto detections = detector.detect(frame, 0.25f, 0.45f);
+
+        // 검출 결과 바운딩 박스 렌더링
+        for (const auto& det : detections) {
+            cv::rectangle(frame, det.box, cv::Scalar(0, 255, 0), 2);
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(end - start).count();
+        latencies.push_back(ms);
+        frameCount++;
+    }
+
+    cap.release();
+
+    if (latencies.empty()) {
+        std::cerr << "처리된 프레임이 없습니다." << std::endl;
+        return -1;
+    }
+
+    // 5. 통계 산출
+    double sum = std::accumulate(latencies.begin(), latencies.end(), 0.0);
+    double avg = sum / latencies.size();
+    double min_val = *std::min_element(latencies.begin(), latencies.end());
+    double max_val = *std::max_element(latencies.begin(), latencies.end());
+
+    std::cout << "\n================ [5. C++ Native TRT Video 벤치마크] ================" << std::endl;
+    std::cout << "처리 프레임 수: " << frameCount << " / " << totalFrames << std::endl;
+    std::cout << "평균 Latency (Avg): " << cv::format("%.2f", avg) << " ms" << std::endl;
+    std::cout << "최소 Latency (Min): " << cv::format("%.2f", min_val) << " ms" << std::endl;
+    std::cout << "최대 Latency (Max): " << cv::format("%.2f", max_val) << " ms" << std::endl;
+    std::cout << "평균 동영상 처리 FPS: " << cv::format("%.1f", 1000.0 / avg) << " FPS" << std::endl;
+    std::cout << "=========================================================================" << std::endl;
+
     return 0;
 }
-
-// 단건 탐지
-// int main() {
-//     // 객체 생성 (엔진 파일 로드 및 GPU 할당 자동 진행)
-//     YoloTRT detector("yolov8n.engine");
-
-//     cv::Mat img = cv::imread("bus.jpg");
-//     if (img.empty()) {
-//         std::cerr << "이미지 로드 실패" << std::endl;
-//         return -1;
-//     }
-
-//     auto detections = detector.detect(img, 0.25f, 0.45f);
-
-//     std::cout << "[OOP YoloTRT] 검출 객체 수: " << detections.size() << "개" << std::endl;
-
-//     for (const auto& det : detections) {
-//         cv::rectangle(img, det.box, cv::Scalar(0, 255, 0), 2);
-//         std::string label = "Class " + std::to_string(det.classId) + ": " + cv::format("%.2f", det.conf);
-//         cv::putText(img, label, cv::Point(det.box.x, det.box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
-//     }
-
-//     cv::imwrite("output_oop.jpg", img);
-//     std::cout << "결과가 output_oop.jpg로 저장되었습니다." << std::endl;
-
-//     return 0;
-// }

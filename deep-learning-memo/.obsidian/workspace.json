@@ -13,26 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "딥러닝 메모장 241 ~ 260.md",
+                "file": "딥러닝 메모장 261 ~ 280.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "딥러닝 메모장 241 ~ 260"
-            }
-          },
-          {
-            "id": "c50749b6d9ef423a",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "C++ 001 ~ 020.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "C++ 001 ~ 020"
+              "title": "딥러닝 메모장 261 ~ 280"
             }
           },
           {
@@ -64,7 +50,7 @@
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -98,7 +84,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "ntohl",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -122,8 +108,7 @@
               "title": "북마크"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -235,23 +220,23 @@
   },
   "active": "5413230d2fe8d05a",
   "lastOpenFiles": [
-    "images/Pasted image 20260930140120.png",
-    "images/Pasted image 20260930140111.png",
-    "images/Pasted image 20260930015422.png",
-    "images/Pasted image 20260930015403.png",
-    "C++ 001 ~ 020.md",
-    "딥러닝 메모장 241 ~ 260.md",
+    "images/Pasted image 20261012165519.png",
+    "images/Pasted image 20261011221516.png",
+    "images/Pasted image 20261011215948.png",
+    "images/Pasted image 20261011215932.png",
+    "images/Pasted image 20261011215923.png",
     "딥러닝 메모장 261 ~ 280.md",
-    "C++ 041 ~ 060.md",
-    "잡다한 지식 001 ~ 020.md",
     "C++ 021 ~ 040.md",
-    "images/Pasted image 20260927192830.png",
-    "images/Pasted image 20260925000737.png",
-    "images/Pasted image 20260923135030.png",
-    "images/Pasted image 20260923135020.png",
-    "images/Pasted image 20260923003218.png",
-    "images/Pasted image 20260923002854.png",
-    "images/Pasted image 20260923002406.png",
+    "images/Pasted image 20261011025223.png",
+    "images/Pasted image 20261011005640.png",
+    "images/Pasted image 20261010165530.png",
+    "images/Pasted image 20261010151011.png",
+    "images/Pasted image 20261010145340.png",
+    "images/Pasted image 20261010003241.png",
+    "딥러닝 메모장 241 ~ 260.md",
+    "C++ 041 ~ 060.md",
+    "C++ 001 ~ 020.md",
+    "잡다한 지식 001 ~ 020.md",
     "Unity C# 001 ~ 020.md",
     "딥러닝 메모장 181 ~ 200.md",
     "JS 메모장 001 ~ 020.md",
