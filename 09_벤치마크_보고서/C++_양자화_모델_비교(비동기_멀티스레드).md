@@ -605,7 +605,7 @@ int main() {
     -L/usr/lib/x86_64-linux-gnu \
     -L/usr/local/cuda/lib64 \
     -lnvinfer -lnvonnxparser -lcudart \
-    -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lopencv_dnn
+    -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lopencv_dnn -lpthread
 
 !./streaming_test
 ```
