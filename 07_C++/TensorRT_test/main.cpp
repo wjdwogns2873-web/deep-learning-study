@@ -8,7 +8,10 @@
 
 int main() {
     // 1. C++ TensorRT 엔진 로드
-    YoloTRT detector("yolov8n.engine");
+    std::string modelName = "yolov8n.int8.engine";
+    YoloTRT detector(modelName);
+
+    std::cout << modelName << " 엔진으로 비디오 추론 시작" << std::endl;
 
     // 2. 비디오 파일 열기
     std::string videoPath = "./test_videos/sample.mp4";
@@ -73,7 +76,7 @@ int main() {
     double min_val = *std::min_element(latencies.begin(), latencies.end());
     double max_val = *std::max_element(latencies.begin(), latencies.end());
 
-    std::cout << "\n================ [5. C++ Native TRT Video 벤치마크] ================" << std::endl;
+    std::cout << "==== C++ Native " << modelName << " 엔진 동영상 스트리밍 벤치마크 ====" << std::endl;
     std::cout << "처리 프레임 수: " << frameCount << " / " << totalFrames << std::endl;
     std::cout << "평균 Latency (Avg): " << cv::format("%.2f", avg) << " ms" << std::endl;
     std::cout << "최소 Latency (Min): " << cv::format("%.2f", min_val) << " ms" << std::endl;
@@ -83,3 +86,12 @@ int main() {
 
     return 0;
 }
+
+// int main() {
+//     YoloTRT detector("yolov8n_int8.engine");
+//     // YoloTRT detector("yolov8n.engine");
+
+//     std::string testDir = "./test_images";
+//     detector.runDatasetInference(testDir);
+//     return 0;
+// }

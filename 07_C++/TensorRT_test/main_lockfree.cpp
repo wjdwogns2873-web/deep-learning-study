@@ -1,0 +1,237 @@
+#include "YoloTRT.h"
+#include <chrono>
+#include <numeric>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <thread>
+#include <atomic>
+#include <iomanip>
+#include <ctime>
+#include <opencv2/opencv.hpp>
+
+// std::mutex를 하나도 쓰지 않는 고속 lock-free 순환 큐입니다.
+class LockFreeFrameQueue {
+private:
+    // static constexpr을 쓰는 이유는 무엇인가?
+    // static은.. 클래스의 각 객체마다 생기는 게 아닌, 해당 클래스의 모든 객체가 공유하는 전역 상수입니다.
+    // 인스턴스마다 메모리를 낭비하지 않고 공유하는 용도로 쓰입니다.
+
+    // constexpr은.. 컴파일 시점에 값이 확정되는 완벽한 상수임을 보장합니다.
+
+    // 그래서.. 두 개를 같이 쓰는 이유는..?
+    // C++에서 배열의 크기를 선언할 때(cv::Mat ringBuffer[kCapacity])는 컴파일 시점에 반드시 크기를 알 수 있는 상태여야 합니다.
+    // static constexpr을 사용하면 메모리 공간을 따로 차지하지 않는 컴파일 타임 상수가 되어서 배열 크기를 지정할 때 사용합니다.
+    static constexpr size_t kCapacity = 32; // 링 버퍼의 최대 용량을 32로 정해둡니다.
+
+    // 배열 방식을 쓴 이유, 그리고 std::vector<cv::Mat>과의 차이는 뭐야?
+    // 배열 방식은 미리 32개 공간의 고정 크기 배열을 생성합니다.
+    // std::vector 방식은 데이터를 추가하거나 크기를 바꿀 때 내부적으로 힙 메모리를 재할당하거나 동적 할당이 일어나서 미세한 딜레이가 생깁니다.
+    // 하지만 lock-free 큐 구조에서는 동적 할당이나 메모리 재할당이 일어나면 FPS가 떨어집니다.
+    // 따라서 메모리 풀링(Memory Pooling) 기법을 써서 처음 시작할 때 640 640 크기의 방 32개를 미리 파두고,
+    // 이후에는 새로 메모리를 할당하지 않고 기존 방에 copyTo()로 픽셀 데이터만 덮어쓰는 방식으로 오버헤드를 줄였습니다.
+    cv::Mat ringBuffer[kCapacity]; // 최대 32개의 Mat을 담을 수 있는 링 버퍼를 선언합니다.
+
+    // CPU 하드웨어 레벨에서 연산의 원자성을 보장해 줍니다.
+    // 중괄호 표현이 되게 낯설 수 있는데, 쉽게 말해서
+    // 객체를 생성하면서 초기값을 0으로 대입하는 C++ 표준 문법입니다.
+    std::atomic<size_t> writeIndex{0};
+    std::atomic<size_t> readIndex{0};
+
+public:
+    LockFreeFrameQueue() {
+        // 메모리 풀링: 시작할 때 640 640 크기 방 32개를 미리 파둡니다. (동적 할당 배제)
+        for (size_t i = 0; i < kCapacity; i++) {
+            ringBuffer[i] = cv::Mat::zeros(640, 640, CV_8UC3);
+        }
+    }
+
+    // producer: 자물쇠 없이 원자적 연산으로 큐에 삽입합니다.
+    // 링 버퍼에 프레임을 밀어넣는 함수입니다.
+    bool push(const cv::Mat& frame) {
+        // memory_order란?
+        // CPU와 컴파일러는 성능을 극대화하기 위해 코드의 실행 순서를 임의로 바꾸는 최적화를 수행합니다.
+        // 하지만 멀티스레드 환경에서는 이 순서가 뒤죽박죽되면 데이터가 꼬입니다.
+        // 이때 "이 변수를 읽고 쓸 때 스레드 간의 순서를 어떻게 보장할 것인가"를 지정해 주는 것입니다.
+
+        // memory_order_relaxed: 완화된 순서
+        // 가장 제한이 없고 빠릅니다. 원자성만 보장될 뿐, 다른 메모리 접근과의 실행 순서를 강제하지는 않습니다.
+        // push 함수의 writeIndex에게 이걸 쓰는 이유는, writeIndex는 producer 혼자서 쓰고 관리하는 값이므로
+        // 순서 제약 없이 가장 빠르게 현재 값을 읽어오면 되기 때문입니다.
+
+        // memory_order_acquire: 획득
+        // 데이터를 읽어들일 때(load) 사용합니다.
+        // 이 명령어가 실행된 이후에 나오는 모든 메모리 읽기/쓰기 작업이 이 명령어보다 절대 위로 못올라가게 막아서,
+        // 다른 스레드가 쓴 최신 데이터를 안전하게 가져오도록 보장합니다.
+        size_t currentWrite = writeIndex.load(std::memory_order_relaxed);
+        size_t currentRead = readIndex.load(std::memory_order_acquire);
+
+        // currentWrite: 지금까지 producer가 총 몇개의 프레임을 썼는지 누적 카운트입니다.
+        // currentRead: 지금까지 consumer가 총 몇개의 프레임을 읽어갔는지 누적 카운트입니다.
+        // currentWrite - currentRead: 현재 큐 안에 남아있는(아직 처리되지 않은) 프레임의 개수입니다.
+        // 이 개수가 kCapacity(32)보다 크거나 같다는 뜻은, 링 버퍼가 가득 찼다는 의미이므로, 더이상 push할 수 없습니다.
+        if ((currentWrite - currentRead) >= kCapacity) {
+            return false; // 자물쇠가 없으므로 스레드를 재우지 않고 즉시 false를 반환합니다.
+        }
+
+        // currentWrite 값을 알면, 지금 32개의 방 중에 어떤 방이 비었는지 방 번호(index)를 알 수 있습니다.
+        // 35번 프레임을 마지막으로 처리했다면, currentWrite 값은 35가 되고, 이것을 kCapacity(32)로 나눈 나머지는 3이 됩니다.
+        // 즉, 3번 방에 35번 프레임이 있었는데, 처리했으므로 다시 써도 되는 방이 되었습니다. 방을 재사용하겠다는 의미입니다.
+        // 프레임(frame)을, 미리 파둔 3번 방에 픽셀값만 복사함으로써 복사 오버헤드를 최소화합니다.
+        // clone()을 할 필요가 없어진 것이죠.
+        size_t index = currentWrite % kCapacity;
+        frame.copyTo(ringBuffer[index]);
+
+        // memory_order_release
+        // 데이터를 쓸 때(store) 사용합니다.
+        // 이 명령어 이전에 수행된 모든 메모리 쓰기 작업이 이 명령어보다 절대 아래로 못내려가게 막습니다.
+        writeIndex.store(currentWrite + 1, std::memory_order_release);
+        return true;
+    }
+
+    // consumer: 자물쇠 없이 원자적 연산으로 큐에서 추출합니다.
+    bool pop(cv::Mat& frame, const std::atomic<bool>& stopSignal) {
+        while (true) {
+            // 여기서는 push 함수와 반대로, currentRead에 memory_order_relaxed를 주고,
+            // currentWrite에 memory_order_acquire를 주었습니다.
+            // currentRead는 pop에서만 수정하고 관리하기 때문에 순서 제약 없이 가장 빠르게 현재 값을 읽어오면 되기 때문입니다.
+            size_t currentRead = readIndex.load(std::memory_order_relaxed);
+            size_t currentWrite = writeIndex.load(std::memory_order_acquire);
+
+            // 큐가 비어있는 상태 체크
+
+            // currentRead(pop한 개수)와 currentWrite(push한 개수)가 같다는 건, 큐에 있는걸 모두 다 읽어서 종료되었거나, 아직 시작하지도 않은 상태를 의미합니다.
+            if (currentRead == currentWrite) {
+                if (stopSignal.load(std::memory_order_relaxed)) {
+                    return false; // 동영상 종료 신호(stopSignal)가 true이면, 이제 빠져나옵니다.
+                }
+                // 아직 할 일이 없기 때문에 Budy Waiting을 방지하고 CPU를 잠시 양보합니다.
+                std::this_thread::yield();
+                continue;
+            }
+
+            // 맨 처음엔 아무것도 읽지 않았으므로 currentRead 값은 0입니다. 그럼 index 값도 0이 됩니다.
+            // 링 버퍼에서 0번째 방에 있는 프레임(frame)을 가져옵니다.
+            size_t index = currentRead % kCapacity;
+            frame = ringBuffer[index];
+
+            // 읽기 완료했음(pop)을 원자적으로 업데이트합니다. 그럼 producer 입장에서 빈자리가 생겼음을 알 수 있습니다.
+            readIndex.store(currentRead + 1, std::memory_order_release);
+            return true;
+        }
+    }
+};
+
+// 스레드 1: 동영상 전용 디코딩 스레드입니다.
+// 비디오 파일의 경로, 큐, 동영상 처리 정지 여부 변수를 매개변수로 받습니다.
+void videoDecodingThread(const std::string& videoPath, LockFreeFrameQueue& lfQueue, std::atomic<bool>& stopSignal) {
+    cv::VideoCapture cap(videoPath);
+    if (!cap.isOpened()) {
+        std::cerr << "비디오 파일을 열 수 없습니다: " << videoPath << std::endl;
+        stopSignal = true;
+        return;
+    }
+
+    cv::Mat frame;
+    while (!stopSignal) {
+        cap >> frame;
+        if (frame.empty()) break; // 동영상이 끝났음을 의미합니다.
+
+        // 큐가 가득 차서 push가 실패하면, 자리가 생길 때까지(true가 될 때까지) 무한루프로 대기합니다.
+        while (!lfQueue.push(frame) && !stopSignal) {
+            std::this_thread::yield();
+        }
+    }
+    cap.release();
+    stopSignal = true; // 동영상 처리가 종료되었음을 알려줍니다.
+}
+
+int main() {
+    // 각 모델을 테스트할 때 여기 엔진 파일명만 바꿔주면서 실행하면 됩니다.
+    std::string engineName = "yolov8n.int8.engine";
+    // std::string engineName = "yolov8n.fp16.engine";
+    // std::string engineName = "yolov8n.int8.engine";
+
+    YoloTRT detector(engineName);
+
+    // 테스트할 비디오 경로입니다.
+    std::string videoPath = "./test_videos/sample.mp4";
+
+    // 비디오 전체 프레임 수를 미리 파악하기 위해 임시 VideoCapture 객체를 생성합니다.
+    cv::VideoCapture tempCap(videoPath);
+    int totalFrames = static_cast<int>(tempCap.get(cv::CAP_PROP_FRAME_COUNT));
+    tempCap.release();
+
+    // warm up 과정이 없으면 max latency가 초반에 팍 튀는 현상이 있기에, warm up을 해주는 게 벤치마킹을 정확하게 측정할 수 있습니다.
+    cv::Mat dummyFrame = cv::Mat::zeros(640, 640, CV_8UC3);
+    for (int i = 0; i < 50; i++) {
+        detector.detect(dummyFrame, 0.25f, 0.45f);
+    }
+
+    LockFreeFrameQueue lfQueue;
+    std::atomic<bool> stopSignal(false);
+    std::vector<double> latencies;
+    // 전체 프레임 수 만큼 메모리 공간을 미리 할당합니다.
+    latencies.reserve(totalFrames);
+
+    // 동영상 처리 스레드를 가동합니다. CPU가 동영상을 무정지로 계속 읽어서 큐에 최대 32개까지 쌓습니다.
+    std::thread reader(videoDecodingThread, videoPath, std::ref(lfQueue), std::ref(stopSignal));
+
+    int frameCount = 0;
+    while (true) {
+        cv::Mat frame;
+        // 동영상 처리 스레드가 읽어서 push된 프레임을 비동기적으로 꺼냅니다(pop). 없으면 대기합니다.
+        if (!lfQueue.pop(frame, stopSignal)) {
+            break;
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // 실제 추론 코드입니다.
+        auto detections = detector.detect(frame, 0.25f, 0.45f);
+        // 탐지된 박스들(detections)을 프레임 위에 그려줍니다.
+        for (const auto& det : detections) {
+            cv::rectangle(frame, det.box, cv::Scalar(0, 255, 0), 2);
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(end - start).count();
+        latencies.push_back(ms);
+        frameCount++;
+    }
+    // 쓰레드 안전 종료 및 합류
+    // join(): 
+    // 메인 스레드가 자기 일을 다 마쳤는데, 자기가 먼저 프로그램을 종료해버리면 다른 스레드(reader)는 메모리 주소가 날라가서 에러가 납니다.
+    // 그래서 reader.join()을 호출하면, 메인 스레드가 합류 지점에 멈춰서서, "일꾼 스레드가 일을 다 끝내고 안전하게 합류해서 돌아올 때까지 여기서 기다릴게"라는 명령어입니다.
+    // joinable():
+    // 스레드가 합류할 수 있는 상태인가(true)를 체크하고, 맞다면 join()하기 위한 안전장치입니다.
+    if (reader.joinable()) {
+        reader.join();
+    }
+
+    // 한국 시간에 맞추기 위해 9시간을 더합니다.
+    auto now = std::chrono::system_clock::now() + std::chrono::hours(9);
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
+
+
+    double sum = std::accumulate(latencies.begin(), latencies.end(), 0.0);
+    double avg = sum / latencies.size();
+    // min과 max를 구하는 방식이 조금 독특합니다. 별(*)을 붙이는 이유
+    // std::min_element가 최솟값 숫자 자체를 반환하는 게 아니라, 최솟값이 위치한 주소값을 반환하기 위함입니다.
+    // 별(*)을 붙여 역참조를 해서 주소에 있는 알맹이 값을 가져옵니다.
+    // double min = *std::min_element(latencies.begin(), latencies.end());
+    // double max = *std::max_element(latencies.begin(), latencies.end());
+
+    std::cout << "측정 시각(KST): " << std::put_time(std::gmtime(&now_c), "%Y-%m-%d %H:%M:%S") << std::endl;
+    // std::cout << "================ [lock-free 큐 고속 비동기 TRT Video 벤치마크] ================" << std::endl;
+    std::cout << "사용한 가속 엔진: " << engineName << std::endl;
+    // std::cout << "처리 프레임 수: " << frameCount << " / " << totalFrames << std::endl;
+    // std::cout << "순수 추론 파이프라인 Latency (Avg): " << cv::format("%.2f", avg) << " ms" << std::endl;
+    // std::cout << "최소 Latency (Min): " << cv::format("%.2f", min) << " ms" << std::endl;
+    // std::cout << "최대 Latency (Max): " << cv::format("%.2f", max) << " ms" << std::endl;
+    std::cout << "lock-free 2threads(copyTo 방식) 속도: " << cv::format("%.1f", 1000.0 / avg) << " FPS" << std::endl;
+    // std::cout << "=========================================================================" << std::endl;
+
+    return 0;
+}

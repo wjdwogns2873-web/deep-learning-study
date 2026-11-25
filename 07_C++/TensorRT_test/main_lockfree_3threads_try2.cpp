@@ -1,0 +1,301 @@
+#include "YoloTRT.h"
+#include <chrono>
+#include <numeric>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+#include <thread>
+#include <atomic>
+#include <opencv2/opencv.hpp>
+
+// 두 번째 시도(Try2): 잘못된 정보에 기반한 copyTo 메모리 풀링 도입 및 성능 저하 분석
+
+// 1. 초기 오류:
+// Try1에서 구조체 대입 연산(ringBuffer[index] = item)을 수행할 때, 대상 cv::Mat의 크기가 0(empty)이면
+// 얕은 복사 대신 깊은 복사(.clone())가 강제 실행되어 병목이 발생한다고 잘못 이해했습니다.
+// 이를 해결하기 위해 큐B에도 32개의 방을 미리 파두고, copyTo()로 픽셀만 덮어쓰도록 수정했습니다.
+
+// 2. 벤치마크 결과 (오히려 성능 저하):
+// [FP16 기준] Try1 평균 FPS: 66.0 -> Try2 평균 FPS: 49.2로 FPS가 대폭 감소했습니다.
+
+// 3. 팩트 체크:
+// OpenCV의 cv::Mat 대입 연산자(=)는 대상이 비어있든 크기가 다르든 무조건 얕은 복사(포인터 공유)만 수행합니다.
+// 대상 크기가 0이거나 다를 때 메모리를 새로 할당하는 것은 '='가 아니라 copyTo()의 동작 원리였습니다.
+// 결과적으로 Try1에서는 픽셀 복사가 없었으나, Try2에서는 큐A와 큐B의 push/pop 과정에서
+// 픽셀 데이터를 총 4회 복사(copyTo)하면서 심각한 CPU 메모리 병목이 발생했습니다.
+// 단, Try1의 얕은 복사는 멀티스레드 환경에서 데이터 오염 위험이 있으므로 
+// 다음 단계인 Try3에서는 복사 없이 안전하게 소유권만 넘기는 std::shared_ptr 기반 제로카피로 전환했습니다.
+
+
+// 추론 결과 및 추론 측정 시간을 담는 구조체입니다.
+struct InferenceResult {
+    cv::Mat frame; // 추론할 때 넣은 프레임입니다. 이 프레임 위에 rectangle을 하기 위해 존재합니다.
+    std::vector<Detection> detections; // 탐지 결과를 담는 detections입니다.
+    std::chrono::high_resolution_clock::time_point startTime; // 추론 직전 시간을 담기 위해 존재합니다.
+};
+
+// cv::Mat 배열, InferenceResult 배열을 만들기 위해 템플릿을 선언합니다.
+template <typename T>
+class LockFreeQueue {
+private:
+    static constexpr size_t kCapacity = 32; // 링 버퍼의 최대 용량을 설정합니다.
+    T ringBuffer[kCapacity]; // 메모리 동적 할당을 막기 위해 고정 크기의 배열을 미리 선언합니다.
+
+    // mutex를 쓰지 않고, 원자적 변수를 선언합니다.
+    // pushIndex는 push할 때, popIndex는 pop할 때 사용합니다.
+    std::atomic<size_t> pushIndex{0};
+    std::atomic<size_t> popIndex{0};
+
+public:
+    // 생성자입니다.
+    LockFreeQueue() {
+        // if constexpr은 컴파일러용 if문입니다. 일반 if문과 달리 컴파일하는 시점에 조건을 판단합니다.
+        // 여기서 일반 if문을 쓰면 컴파일 시점에서는 if문이 true이든, false이든 상관하지 않고 코드를 번역하려고 시도합니다.
+        // 그러면 T에 InferenceResult가 들어왔을 때 문법이 에러나서 컴파일 에러가 발생합니다.
+
+        // 하지만 if constexpr은 T가 InferenceResult로 들어오면 컴파일러는 번역하기 전에 미리 조건을 계산합니다.
+        // 즉, 최종 만들어지는 실행 파일에서는 이 코드가 존재하지 않는 상태가 됩니다.
+
+        // 그러면, 모든 순간에 if constexpr을 쓰면 되지 않을까? 그렇지 않다.
+        // 쓰고싶어도 컴파일러가 허락하지 않는다.
+        // 괄호 안에 들어가는 값이 "컴파일하는 시점에 이미 결정되어 있는 상수"여야만 한다.
+        // 템플릿(T)이나 constexpr 상수 등 컴파일러가 빌드할 때 이미 알고 있을 때만 제한적으로 사용한다.
+        if constexpr (std::is_same_v<T, cv::Mat>) {
+            for (size_t i = 0; i < kCapacity; i++) {
+                ringBuffer[i] = cv::Mat::zeros(640, 640, CV_8UC3);
+            }
+        } else if constexpr (std::is_same_v<T, InferenceResult>) {
+            for (size_t i = 0; i < kCapacity; i++) {
+                ringBuffer[i].frame = cv::Mat::zeros(640, 640, CV_8UC3);
+            }
+        }
+    }
+
+    // producer: 큐에 프레임을 넣습니다(push)
+    // 넣을 수 있는 상황(큐의 공간이 남아있음)이면 true, 넣을 수 없는 상황(큐가 가득 찼음)이면 false를 반환합니다.
+    // std::move를 통해 우측값 참조로 소유권만 넘겨받아 픽셀 복사를 원천 차단합니다.
+    bool push(T&& item, std::atomic<bool>& stopSignal) {
+        // 각각 현재 큐에 넣을(push) 방의 번호, 큐에서 꺼내갈(pop) 방의 번호를 의미합니다. 이 번호는 32를 넘어 동영상 프레임의 개수까지 증가합니다.
+        size_t currentPush = pushIndex.load(std::memory_order_relaxed);
+        size_t currentPop = popIndex.load(std::memory_order_acquire);
+
+        // 큐가 가득 찼는지 체크합니다.
+        // 녛을(push) 프레임(또는 구조체)의 번호가 67이고 꺼내갈(pop) 프레임의 번호가 35라면 큐에는 32(67-35)개의 데이터가 있기에 가득 차 있는 상태입니다.
+        // 하지만 녛을(push) 프레임의 번호가 67이고 꺼내갈(pop) 프레임의 번호가 34라면 큐에는 31(67-34)개의 데이터가 있기에 1개를 더 넣을 수 있는 상태가 되고, 
+        // if문을 타지 않고 밑으로 내려갑니다. 넣을(push) 준비를 하는 것입니다.
+        if ((currentPush - currentPop) >= kCapacity) {
+            return false;
+        }
+
+        // 방 32개를 순환해서 쓰고 있기 때문에, 현재 넣을(push) 프레임 번호를 kCapacity(32)로 나눈 나머지가 index가 됩니다.
+        size_t index = currentPush % kCapacity;
+
+        // [병목 지점] 미리 할당된 방에 copyTo()로 픽셀 데이터를 직접 덮어씁니다.
+        // 메모리 재할당 오버헤드는 막을 수 있었지만, 매 프레임마다 픽셀을 CPU로 복사하는 오버헤드가 발생합니다.
+        if constexpr (std::is_same_v<T, cv::Mat>) {
+            item.copyTo(ringBuffer[index]);
+        } else if constexpr (std::is_same_v<T, InferenceResult>) {
+            item.frame.copyTo(ringBuffer[index].frame); // 큐B에 push할 대 픽셀 복사비용이 발생합니다.
+            ringBuffer[index].detections = std::move(item.detections); // 벡터는 소유권 째로 이동합니다.
+            
+            ringBuffer[index].startTime = item.startTime;
+        }
+
+        // 이제 다음 넣을 프레임의 번호는 67 + 1 = 68이 됩니다.
+        pushIndex.store(currentPush + 1, std::memory_order_release);
+        // 넣기(push)를 완료했으니 true를 반환합니다.
+        return true;
+    }
+
+    // consumer: 큐에서 데이터 추출
+    // 링버퍼에서 꺼낸 것을 item에 담습니다.
+    // pop은 push와 다른 점이, while문으로 이루어져 있습니다.
+    // 따라서 pop 함수 하나만 켜 두어도 while문이 계속 돌아가는 것입니다.
+    // 
+    bool pop(T& item, std::atomic<bool>& stopSignal) {
+        while (true) {
+            size_t currentPop = popIndex.load(std::memory_order_relaxed);
+            size_t currentPush = pushIndex.load(std::memory_order_acquire);
+
+            // 큐가 비어있는지 체크합니다.
+            // 꺼낼(pop) 프레임(또는 구조체)의 번호가 넣을(push) 프레임의 번호와 같다면 큐가 비어있다는 뜻입니다.
+            if (currentPop == currentPush) {
+                if (stopSignal.load(std::memory_order_relaxed)) {
+                    return false; // stopSignal이 true라면 종료 신호가 켜졌다는 걸 의미하므로, while 문을 탈출합니다.
+                }
+                std::this_thread::yield(); // 비어있지만 아직 종료 신호가 켜지지 않은 상태라면 CPU를 양보하며 대기합니다. 큐에 데이터가 들어올 때까지
+                continue;
+            }
+            // 방 32개를 순환해서 쓰고 있기 때문에, 현재 꺼낼(pop) 프레임 번호를 kCapacity(32)로 나눈 나머지가 index가 됩니다.
+            size_t index = currentPop % kCapacity;
+
+            // [병목 지점] 큐에서 꺼낼 때도 copyTo()를 수행하여 픽셀복사가 일어납니다.
+            if constexpr (std::is_same_v<T, cv::Mat>) {
+                ringBuffer[index].copyTo(item);
+            } else if constexpr (std::is_same_v<T, InferenceResult>) {
+                // item = ringBuffer[index];
+                ringBuffer[index].frame.copyTo(item.frame);
+                item.detections = std::move(ringBuffer[index].detections); // 벡터는 소유권 째로 이동합니다.
+
+                item.startTime = ringBuffer[index].startTime;
+            }
+
+            // 꺼내기(pop)를 완료했으므로, 더하기 1을 해줍니다.
+            // 지금 67번 째를 꺼냈다면, 이제 다음 타겟은 68번 째 프레임(또는 구조체)입니다.
+            popIndex.store(currentPop + 1, std::memory_order_release);
+            return true;
+        }
+    }
+};
+
+// 스레드 1: 동영상 전용 디코딩 스레드
+void videoDecodingThread(const std::string& videoPath, LockFreeQueue<cv::Mat>& lfQueueA, std::atomic<bool>& stopSignalA) {
+    // 비디오 파일 경로를 통해 VideoCapture 객체를 생성합니다.
+    cv::VideoCapture cap(videoPath);
+    if (!cap.isOpened()) {
+        std::cerr << "비디오 파일을 열 수 없습니다: " << videoPath << std::endl;
+        stopSignalA = true;
+        return;
+    }
+
+    // VideoCapture 객체에서 나올 프레임을 받아낼 그릇(cv::Mat)을 생성합니다.
+    cv::Mat frame;
+    // 종료 신호(stopSignalA)가 false(! 붙이면 true)일 때만 VideoCapture 객체에서 프레임을 꺼내고 꺼낸 프레임을 큐에 집어넣는(push) 작업을 진행합니다.
+    while (!stopSignalA) {
+        cap >> frame;
+        if (frame.empty()) break; // 프레임이 비어있다면, 동영상이 끝이 났음을 의미합니다.
+
+        // 큐A가 가득 차서 push가 실패하면 빈자리가 생길 때까지 무한루프 대기합니다.
+        while (!lfQueueA.push(std::move(frame), stopSignalA)) {
+            // 여기서 continue를 하면 안되는가?
+            // continue를 하게 되면 중간에 프레임을 건너뛰게 되어 프레임 드랍이 발생할 수 있다.
+            // 그래서 절대 건너뛰면 안되고, 빈자리가 생길 때까지 CPU를 양보(yield)하고, 대기한다.
+            std::this_thread::yield();
+        }
+    }
+    cap.release();
+    // 종료 신호를 켭니다.
+    stopSignalA = true;
+}
+
+// 스레드 2: 오직 GPU 추론만 전담하는 스레드
+void gpuInferenceThread(
+    YoloTRT& detector, 
+    LockFreeQueue<cv::Mat>& lfQueueA, 
+    LockFreeQueue<InferenceResult>& lfQueueB, 
+    std::atomic<bool>& stopSignalA, 
+    std::atomic<bool>& stopSignalB) {
+    
+    // 큐에서 꺼낼(pop) 프레임(cv::Mat)을 받을 그릇을 준비합니다.
+    cv::Mat frame = cv::Mat::zeros(640, 640, CV_8UC3);
+    while (true) {
+        // 큐A에서 프레임을 꺼냄 (consumer)
+        // pop()이 false라는 것은 stopSignalA(종료신호)가 켜졌음을 의미하므로 이제 이 while문을 중단시켜야 합니다.
+        if (!lfQueueA.pop(frame, stopSignalA)) {
+            break;
+        }
+        // 추론 시작 직전에 시간 측정을 시작합니다.
+        auto frameStart = std::chrono::high_resolution_clock::now();
+
+        // 오직 GPU 추론만 수행
+        std::vector<Detection> detections = detector.detect(frame, 0.25f, 0.45f);
+
+        // 추론 결과를 구조체에 담습니다.
+        InferenceResult res;
+        res.frame = frame;
+        res.detections = std::move(detections);
+        res.startTime = frameStart;
+
+        // 큐B에 추론 결과(구조체)를 넣습니다(push). (producer)
+        // 이것 역시 큐의 빈자리가 나올 때까지 무한 대기합니다.
+        while (!lfQueueB.push(std::move(res), stopSignalB)) {
+            std::this_thread::yield();
+        }
+    }
+    // 위의 pop() 함수가 false가 되었다 -> stopSignalA가 true가 되었다 -> 더이상 꺼낼 게 없으니 추론을 진행할 것도 없다
+    // -> stopSignalB도 true로 전환.
+    stopSignalB = true;
+}
+
+// 스레드 3: NMS, 시각화 및 Latency 측정
+void cpuPostProcessingThread(
+    LockFreeQueue<InferenceResult>& lfQueueB, 
+    std::atomic<bool>& stopSignalB, 
+    std::vector<double>& latencies, 
+    int& frameCount) {
+
+    InferenceResult res; // 큐에 들어있는 구조체를 꺼내서(pop) 받아낼 그릇(res)을 생성합니다.
+    res.frame = cv::Mat::zeros(640, 640, CV_8UC3);
+    while (true) {
+        // 큐B에서 데이터를 꺼냅니다. (consumer)
+        if (!lfQueueB.pop(res, stopSignalB)) {
+            break;
+        }
+
+        // 시각화(rectangle)를 진행합니다.
+        for (const auto& det : res.detections) {
+            cv::rectangle(res.frame, det.box, cv::Scalar(0, 255, 0), 2);
+        }
+        // 후처리 과정도 끝이 났으므로 시간 측정을 종료합니다.
+        auto frameEnd = std::chrono::high_resolution_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(frameEnd - res.startTime).count();
+
+        latencies.push_back(ms);
+        frameCount++;
+    }
+}
+
+int main() {
+    std::string engineName = "yolov8n.int8.engine"; // 실행할 엔진을 선택합니다.
+    // std::string engineName = "yolov8n.fp16.engine";
+    // std::string engineName = "yolov8n.int8.engine";
+    YoloTRT detector(engineName);
+
+    std::string videoPath = "./test_videos/sample.mp4"; // 비디오 경로입니다.
+    cv::VideoCapture tempCap(videoPath);
+    int totalFrames = static_cast<int>(tempCap.get(cv::CAP_PROP_FRAME_COUNT));
+    tempCap.release();
+
+    // Warm-Up
+    cv::Mat dummyFrame = cv::Mat::zeros(640, 640, CV_8UC3);
+    for (int i = 0; i < 50; i++) {
+        detector.detect(dummyFrame, 0.25f, 0.45f);
+    }
+
+    LockFreeQueue<cv::Mat> lfQueueA; // 큐A. VideoCapture에서 나온 프레임 하나하나를 담을 큐입니다.
+    LockFreeQueue<InferenceResult> lfQueueB; // 큐B. 추론이 완료된 추론 결과(구조체)를 담을 큐입니다.
+
+    std::atomic<bool> stopSignalA{false}; // 처음엔 false이지만, 프레임을 다 꺼냈다면 true가 됩니다.
+    std::atomic<bool> stopSignalB{false}; // 처음엔 false이지만, 추론 결과(구조체)를 다 꺼내면 true가 됩니다.
+
+    std::vector<double> latencies; // 각 프레임별 처리 시간을 담을 벡터입니다.
+    latencies.reserve(totalFrames); // 불필요한 메모리 동적 할당을 막기 위해 총 프레임 개수 만큼 미리 메모리 공간을 확보합니다.
+    int frameCount = 0;
+
+    // 스레드 3개를 동시에 시작합니다.
+    // reader: 비디오 파일에서 프레임을 하나씩 꺼내서 큐A에 넣는(push) 스레드
+    // inferencer: 큐A에서 프레임을 꺼내서(pop) 추론을 진행하고, 추론 결과(구조체)를 큐B에 넣는(push) 스레드
+    // postPorcessor: 큐B에서 추론 결과(구조체)를 꺼내서(pop) 후처리(시각화)를 하는 스레드
+    std::thread reader(videoDecodingThread, videoPath, std::ref(lfQueueA), std::ref(stopSignalA));
+    std::thread inferencer(gpuInferenceThread, std::ref(detector), std::ref(lfQueueA), std::ref(lfQueueB), std::ref(stopSignalA), std::ref(stopSignalB));
+    std::thread postProcessor(cpuPostProcessingThread, std::ref(lfQueueB), std::ref(stopSignalB), std::ref(latencies), std::ref(frameCount));
+
+    // 모든 스레드가 안전하게 종료될 때까지 대기합니다.
+    if (reader.joinable()) reader.join();
+    if (inferencer.joinable()) inferencer.join();
+    if (postProcessor.joinable()) postProcessor.join();
+
+    double sum = std::accumulate(latencies.begin(), latencies.end(), 0.0);
+    double avg = sum / latencies.size();
+    double min = *std::min_element(latencies.begin(), latencies.end());
+    double max = *std::max_element(latencies.begin(), latencies.end());
+
+    std::cout << "사용한 가속 엔진: " << engineName << std::endl;
+    std::cout << "총 처리 프레임 수: " << frameCount << std::endl;
+    std::cout << "평균 Latency: " << avg << " ms" << std::endl;
+    std::cout << "최소 Latency: " << min << " ms" << std::endl;
+    std::cout << "최대 Latency: " << max << " ms" << std::endl;
+    std::cout << "FPS: " << cv::format("%.1f", 1000.0 / avg) << " FPS" << std::endl;
+
+    return 0;
+}

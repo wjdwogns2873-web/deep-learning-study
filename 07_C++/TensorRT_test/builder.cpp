@@ -19,9 +19,14 @@ int main() {
     // 2. Network 생성 (최신 TRT에서는 NetworkDefinitionCreationFlag를 0으로 전달하거나 Explicit Batch가 기본값임)
     nvinfer1::INetworkDefinition* network = builder->createNetworkV2(0);
     
+    std::string modelName = "yolov8n.int8";
+
     // 3. ONNX Parser 생성
     nvonnxparser::IParser* parser = nvonnxparser::createParser(*network, gLogger);
-    if (!parser->parseFromFile("yolov8n.onnx", static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
+
+    std::string onnxPath = modelName + ".onnx";
+
+    if (!parser->parseFromFile(onnxPath.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
         std::cerr << "ONNX 파싱 실패!" << std::endl;
         return -1;
     }
@@ -39,11 +44,12 @@ int main() {
     }
 
     // 6. 엔진 파일 저장
-    std::ofstream engineFile("yolov8n.engine", std::ios::binary);
+    std::string enginePath = modelName + ".engine";
+    std::ofstream engineFile(enginePath.c_str(), std::ios::binary);
     engineFile.write(reinterpret_cast<const char*>(plan->data()), plan->size());
     engineFile.close();
 
-    std::cout << "성공적으로 호환되는 yolov8n.engine 이 생성되었습니다!" << std::endl;
+    std::cout << "성공적으로 호환되는" << enginePath << "이 생성되었습니다!" << std::endl;
 
     // 객체 정리
     delete plan;
